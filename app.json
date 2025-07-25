@@ -1,0 +1,77 @@
+{
+  "expo": {
+    "name": "Tennis Serve Analyzer",
+    "slug": "tennis-serve-analyzer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1976d2"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tennisserveanalyzer.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "テニスサーブの動画を撮影するためにカメラへのアクセスが必要です。",
+        "NSPhotoLibraryUsageDescription": "動画ファイルを選択するためにフォトライブラリへのアクセスが必要です。",
+        "NSMicrophoneUsageDescription": "動画撮影時に音声を録音するためにマイクへのアクセスが必要です。"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1976d2"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.tennisserveanalyzer.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "アプリが動画ファイルにアクセスするために使用されます。",
+          "cameraPermission": "アプリがテニスサーブの動画を撮影するために使用されます。"
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "アプリが動画ファイルを保存・読み込みするために使用されます。",
+          "savePhotosPermission": "アプリが解析結果を保存するために使用されます。"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#1976d2",
+          "sounds": ["./assets/notification.wav"]
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id-here"
+      }
+    }
+  }
+}
