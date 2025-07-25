@@ -143,6 +143,17 @@ const ResultScreen = ({ route, navigation }) => {
           </Card>
         )}
 
+        {/* Basic Advice（必ず表示） */}
+        {analysisResult.advice && analysisResult.advice.basic_advice && (
+          <Card style={styles.card}>
+            <Card.Content>
+              <Text style={styles.cardTitle}>基本アドバイス</Text>
+              <Divider style={styles.divider} />
+              <Text style={styles.analysisText}>{analysisResult.advice.basic_advice}</Text>
+            </Card.Content>
+          </Card>
+        )}
+
         {/* AI詳細アドバイス */}
         <Card style={styles.card}>
           <Card.Content>
