@@ -16,7 +16,7 @@ const SKIN_OPTIONS_FREE = [
 ];
 const SKIN_OPTIONS_PREMIUM = [
   ...SKIN_OPTIONS_FREE,
-  { label: 'ダーク', value: 'dark' },
+  { label: 'アース', value: 'dark' },
   { label: 'ミント', value: 'mint' },
   { label: 'レトロ', value: 'retro' },
 ];

@@ -104,7 +104,7 @@ const ResultScreen = ({ route, navigation }) => {
           <Card style={[styles.card, { backgroundColor: skin.background }]}>
             <Card.Content>
               <Text style={[styles.cardTitle, { color: skin.primary }]}>オーバーレイ画像</Text>
-              <ScrollView horizontal>
+              <ScrollView>
                 {analysisResult.overlay_images.map((img, idx) => (
                   <View key={idx} style={{ marginRight: 16, alignItems: 'center' }}>
                     <Text style={{ fontSize: 14, color: skin.text, marginBottom: 8 }}>

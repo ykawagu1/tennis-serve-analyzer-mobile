@@ -3,8 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const SKINS = [
   { key: 'classic', name: 'シンプル', primary: '#1976d2', background: '#f5f5f5', text: '#222', accent: '#4caf50' },
-  { key: 'genz', name: 'Z世代ポップ', primary: '#ff69b4', background: '#fff0f6', text: '#333', accent: '#ffde59' },
-  { key: 'dark', name: 'ダーク', primary: '#222831', background: '#11151c', text: '#f8f8f8', accent: '#4f8cff' },
+  { key: 'genz', name: 'ポップ', primary: '#ff69b4', background: '#fff0f6', text: '#333', accent: '#ffde59' },
+  { key: 'dark', name: 'アース', primary: '#78866b', background: '#f4f4e6', text: '#2e3a24', accent: '#b7b37a' },
   { key: 'mint', name: 'ミント', primary: '#30cfcf', background: '#e0f7fa', text: '#333', accent: '#009688' },
   { key: 'retro', name: 'レトロ', primary: '#ff9800', background: '#fff8e1', text: '#5d4037', accent: '#ff5722' },
 ];
