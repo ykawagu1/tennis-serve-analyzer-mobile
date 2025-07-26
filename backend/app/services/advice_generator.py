@@ -5,16 +5,17 @@ from typing import Dict, List, Optional
 logger = logging.getLogger(__name__)
 
 class AdviceGenerator:
-    def __init__(self, api_key: str = ''):
+    def __init__(self):
         """
         アドバイス生成器の初期化
-        引数＞環境変数の順でAPIキーをセット
+        APIキーは環境変数 OPENAI_API_KEY のみ参照
         """
-        # POSTで受けたapi_keyをインスタンスにセット。なければ環境変数。
-        self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        self.api_key = os.environ.get("OPENAI_API_KEY", "")
         self.client = None
         if self.api_key:
             self._init_openai_client(self.api_key)
+        else:
+            logger.warning("OpenAI APIキーが環境変数にセットされていません")
 
     def _init_openai_client(self, api_key: str):
         try:
@@ -34,27 +35,18 @@ class AdviceGenerator:
         analysis_data: Dict,
         user_level: str = 'intermediate',
         focus_areas: List = None,
-        use_chatgpt: Optional[bool] = None,
-        api_key: str = '',
+        use_chatgpt: Optional[bool] = False,
         user_concerns: str = ''
     ) -> Dict:
         """
         解析データに基づいてアドバイスを生成
+        use_chatgpt: TrueのときのみAIアドバイスを生成（APIキーはサーバー環境変数のみ使用）
         """
-        # ★ 引数のapi_keyがあれば、都度self.api_keyを更新してOpenAIクライアントも再生成
-        key_to_use = api_key or self.api_key or os.environ.get("OPENAI_API_KEY")
-        if api_key and api_key != self.api_key:
-            self.api_key = api_key
-            self._init_openai_client(self.api_key)
-
-        if use_chatgpt is None:
-            use_chatgpt = bool(key_to_use)
-
-        logger.info(f"アドバイス生成開始 - ChatGPT使用: {use_chatgpt}, APIキー: {'あり' if key_to_use else 'なし'}, 気になること: {bool(user_concerns)}")
-
+        logger.info(f"アドバイス生成開始 - ChatGPT使用: {use_chatgpt}, 気になること: {bool(user_concerns)}")
         basic_advice = self._generate_basic_advice(analysis_data)
 
-        if use_chatgpt and key_to_use:
+        # 有料（サブスク）プランだけAI詳細アドバイスを生成
+        if use_chatgpt and self.api_key:
             try:
                 logger.info("ChatGPT詳細アドバイス生成開始")
                 enhanced_advice = self._generate_enhanced_advice(
@@ -69,10 +61,11 @@ class AdviceGenerator:
                     basic_advice['one_point_advice'] = self._generate_basic_one_point_advice(user_concerns)
                 return basic_advice
         else:
-            logger.warning("APIキーが空なので詳細アドバイスは生成されません。")
+            # 無料プランは通常アドバイスのみ
+            logger.info("無料枠なので詳細アドバイスは生成されません")
             if user_concerns:
                 basic_advice['one_point_advice'] = self._generate_basic_one_point_advice(user_concerns)
-            basic_advice['error'] = 'APIキーが無いため詳細解説は出力できません。'
+            basic_advice['error'] = '有料プランのみAI詳細アドバイスを利用できます。'
             return basic_advice
 
     def _generate_basic_advice(self, analysis_data: Dict) -> Dict:
@@ -141,7 +134,7 @@ class AdviceGenerator:
             enhanced_advice = self._parse_ai_response(ai_response, basic_advice)
             enhanced_advice["enhanced"] = True
             enhanced_advice["detailed_advice"] = ai_response
-            enhanced_advice["enhanced_advice"] = ai_response   # ←★ここを追加！
+            enhanced_advice["enhanced_advice"] = ai_response   # UIで分かりやすく
             if user_concerns:
                 enhanced_advice["one_point_advice"] = self._extract_one_point_advice(ai_response, user_concerns)
             return enhanced_advice
@@ -152,14 +145,14 @@ class AdviceGenerator:
             return basic_advice
 
     def _call_chatgpt_api(self, prompt: str) -> str:
-        """ChatGPT APIを呼び出し"""
+        """ChatGPT APIを呼び出し（APIキーはサーバー内のみ保持）"""
         try:
             if self.client:
                 logger.info("OpenAI v1.0+ APIを使用")
                 response = self.client.chat.completions.create(
                     model="gpt-4.1-nano",
                     messages=[
-                        {"role": "system", "content": """あなたは30年以上の経験を持つATP/WTAツアーのプロテニスコーチ下記「ユーザーの具体的な悩み」に、必ず明確かつ具体的に答えてください""" },
+                        {"role": "system", "content": """あなたは30年以上の経験を持つATP/WTAツアーのプロテニスコーチです。下記「ユーザーの具体的な悩み」に、必ず明確かつ具体的に答えてください。""" },
                         {"role": "user", "content": prompt}
                     ],
                     max_tokens=5000,
@@ -210,12 +203,12 @@ class AdviceGenerator:
 {concerns_text}
 
 この解析結果に基づいて、以下の構成で詳細なアドバイスを生成してください：
-なお（500文字程度）といった表現は絶対に表示しないでください。また箇条書きにして明確に記載してください。
-1. フォーム改善点の詳細分析（500文字程度）
-2. 4週間トレーニングプログラム（1000文字程度）
-3. フィジカル強化メニュー（1000文字程度）
-4. 実戦での確認ポイント（300文字程度）
-5. ワンポイントアドバイス（200文字程度）
+・（500文字程度）といった表現は絶対に表示しないでください。また箇条書きにして明確に記載してください。
+1. フォーム改善点の詳細分析
+2. 4週間トレーニングプログラム
+3. フィジカル強化メニュー
+4. 実戦での確認ポイント
+5. ワンポイントアドバイス
 
 特に改善が必要なフェーズ（{', '.join(weak_phases)}）に重点を置いて、具体的で実践的なアドバイスをお願いします。
 【アドバイス生成要件】

@@ -12,47 +12,28 @@ import ResultScreen from './src/screens/ResultScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import PermissionManager from './src/components/PermissionManager';
 
+import { SkinProvider, useSkin } from './src/SkinContext';
+
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const theme = {
-  colors: {
-    primary: '#1976d2',
-    accent: '#03dac4',
-    background: '#f5f5f5',
-    surface: '#ffffff',
-    text: '#000000',
-    disabled: '#9e9e9e',
-    placeholder: '#666666',
-    backdrop: 'rgba(0, 0, 0, 0.5)',
-  },
-};
-
-// メインタブナビゲーター
 const MainTabNavigator = () => {
+  const { skin } = useSkin();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
-
-          if (route.name === 'Home') {
-            iconName = focused ? 'tennis' : 'tennis';
-          } else if (route.name === 'Settings') {
-            iconName = focused ? 'cog' : 'cog-outline';
-          }
-
+          if (route.name === 'Home') iconName = 'tennis';
+          else if (route.name === 'Settings') iconName = focused ? 'cog' : 'cog-outline';
           return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#1976d2',
-        tabBarInactiveTintColor: 'gray',
-        headerStyle: {
-          backgroundColor: '#1976d2',
-        },
-        headerTintColor: '#fff',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
+        tabBarActiveTintColor: skin.primary,
+        tabBarInactiveTintColor: '#888',
+        headerStyle: { backgroundColor: skin.primary },
+        headerTintColor: skin.text === '#f8f8f8' ? '#f8f8f8' : '#fff',
+        headerTitleStyle: { fontWeight: 'bold' },
+        tabBarStyle: { backgroundColor: skin.background }
       })}
     >
       <Tab.Screen
@@ -75,18 +56,15 @@ const MainTabNavigator = () => {
   );
 };
 
-// メインスタックナビゲーター
 const MainStackNavigator = () => {
+  const { skin } = useSkin();
   return (
     <Stack.Navigator
       screenOptions={{
-        headerStyle: {
-          backgroundColor: '#1976d2',
-        },
-        headerTintColor: '#fff',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
+        headerStyle: { backgroundColor: skin.primary },
+        headerTintColor: skin.text === '#f8f8f8' ? '#f8f8f8' : '#fff',
+        headerTitleStyle: { fontWeight: 'bold' },
+        cardStyle: { backgroundColor: skin.background },
       }}
     >
       <Stack.Screen
@@ -99,31 +77,44 @@ const MainStackNavigator = () => {
         component={ResultScreen}
         options={{
           title: '解析結果',
-          headerStyle: {
-            backgroundColor: '#1976d2',
-          },
-          headerTintColor: '#fff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-            fontSize: 18,
-          },
+          headerStyle: { backgroundColor: skin.primary },
+          headerTintColor: skin.text === '#f8f8f8' ? '#f8f8f8' : '#fff',
+          headerTitleStyle: { fontWeight: 'bold', fontSize: 18 },
         }}
       />
     </Stack.Navigator>
   );
 };
 
+const SkinThemeProvider = ({ children }) => {
+  const { skin } = useSkin();
+  const skinTheme = {
+    colors: {
+      primary: skin.primary,
+      accent: skin.accent,
+      background: skin.background,
+      surface: skin.background,
+      text: skin.text,
+      disabled: '#bdbdbd',
+      placeholder: '#888',
+      backdrop: 'rgba(0,0,0,0.4)',
+    },
+  };
+  return <PaperProvider theme={skinTheme}>{children}</PaperProvider>;
+};
+
 export default function App() {
   return (
-    <PaperProvider theme={theme}>
-      <PermissionManager>
-        <NavigationContainer>
-          <StatusBar style="auto" />
-          <MainStackNavigator />
-          <Toast />
-        </NavigationContainer>
-      </PermissionManager>
-    </PaperProvider>
+    <SkinProvider>
+      <SkinThemeProvider>
+        <PermissionManager>
+          <NavigationContainer>
+            <StatusBar style="auto" />
+            <MainStackNavigator />
+            <Toast />
+          </NavigationContainer>
+        </PermissionManager>
+      </SkinThemeProvider>
+    </SkinProvider>
   );
 }
-

@@ -1,15 +1,12 @@
 """
-テニスサーブ解析システム - メインアプリケーション（ffmpeg一発変換・完全物理回転対応版）
+テニスサーブ解析システム - メインアプリケーション（有料・無料プラン完全分離/セキュアAPI運用版）
 """
 
 import os
-import sys
 import logging
 import traceback
 import subprocess
 import json
-
-from utils import generate_overlay_images_with_dominant_hand
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -17,10 +14,13 @@ from werkzeug.utils import secure_filename
 import uuid
 
 # サービスのインポート
+from utils import generate_overlay_images_with_dominant_hand
 from services.video_processor import VideoProcessor
 from services.pose_detector import PoseDetector
 from services.motion_analyzer import MotionAnalyzer
 from services.advice_generator import AdviceGenerator
+from dotenv import load_dotenv
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -32,22 +32,6 @@ app = Flask(
 )
 CORS(app)
 
-@app.route("/")
-def index():
-    return app.send_static_file("index.html")
-
-@app.route('/health', methods=['GET'])
-def health():
-    return 'OK', 200
-
-@app.route('/api/validate-key', methods=['POST'])
-def validate_key():
-    data = request.get_json()
-    api_key = data.get("api_key", "")
-    # 必要なら本物のバリデート処理を
-    return jsonify({'valid': True}), 200
-
-
 UPLOAD_FOLDER = 'uploads'
 OUTPUT_FOLDER = 'static/output'
 ALLOWED_EXTENSIONS = {'mp4', 'avi', 'mov', 'mkv'}
@@ -58,8 +42,8 @@ for folder in [UPLOAD_FOLDER, OUTPUT_FOLDER]:
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# ---------- ffprobe回転角度抽出（JSON解析） ----------
 def detect_rotation_ffprobe(file_path):
+    """ffprobeで回転情報取得"""
     try:
         cmd = [
             'ffprobe', '-v', 'error', '-print_format', 'json',
@@ -88,17 +72,15 @@ def detect_rotation_ffprobe(file_path):
         logger.warning(f"ffprobe回転取得エラー: {e}")
         return 0
 
-# ---------- ffmpeg一発：回転＋リサイズ＋fps ----------
 def ffmpeg_one_shot(input_path, output_path, rotate, target_res=(960, 540), target_fps=20):
+    """ffmpeg一発で回転/リサイズ/リフレッシュ"""
     vf = []
-    # 回転指定
     if rotate == 90:
-        vf.append("transpose=1")  # 時計回り90度
+        vf.append("transpose=1")
     elif rotate == -90 or rotate == 270:
-        vf.append("transpose=2")  # 反時計回り90度
+        vf.append("transpose=2")
     elif rotate == 180 or rotate == -180:
-        vf.append("hflip,vflip")  # 180度
-    # リサイズ＆fps
+        vf.append("hflip,vflip")
     vf.append(f"scale={target_res[0]}:{target_res[1]}")
     vf.append(f"fps={target_fps}")
     vf_filter = ",".join(vf)
@@ -106,7 +88,7 @@ def ffmpeg_one_shot(input_path, output_path, rotate, target_res=(960, 540), targ
         "ffmpeg", "-y", "-i", input_path,
         "-vf", vf_filter,
         "-preset", "ultrafast",
-        "-threads", "4", 
+        "-threads", "4",
         "-metadata:s:v", "rotate=0",
         output_path
     ]
@@ -117,6 +99,14 @@ def ffmpeg_one_shot(input_path, output_path, rotate, target_res=(960, 540), targ
     except subprocess.CalledProcessError as e:
         logger.error(f"ffmpeg一発変換失敗: {e.stderr.decode()}")
         return input_path
+
+@app.route('/')
+def index():
+    return app.send_static_file("index.html")
+
+@app.route('/health', methods=['GET'])
+def health():
+    return 'OK', 200
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze_video():
@@ -172,7 +162,7 @@ def analyze_video():
         serve_phases = []
         for i, name in enumerate(phase_names):
             start_frame = i * phase_duration
-            end_frame = min((i+1) * phase_duration, total_frames)
+            end_frame = min((i + 1) * phase_duration, total_frames)
             duration = (end_frame - start_frame) / video_metadata.get('fps', 30)
             serve_phases.append(ServePhase(
                 name=name, start_frame=start_frame,
@@ -189,31 +179,19 @@ def analyze_video():
         tiered_evaluation = motion_analyzer.calculate_tiered_overall_score(analysis_result)
         analysis_result['tiered_evaluation'] = tiered_evaluation
 
-       # (9) アドバイス生成パート
-        api_key = request.form.get("api_key", "")
+        # (9) アドバイス生成パート（セキュア/有料プランのみAIアドバイス）
+        is_premium = request.form.get("is_premium", "false").lower() == "true"
         user_concerns = request.form.get("user_concerns", "")
-        is_premium = request.form.get("is_premium", "false") == "true"   # ★ここを追加
 
-        print(f"★★受け取ったapi_key = {api_key}")
-        print(f"★★受け取ったuser_concerns = {user_concerns}")
-        print(f"★★受け取ったis_premium = {is_premium}")
-        
-        advice_generator = AdviceGenerator() 
+        advice_generator = AdviceGenerator()  # ←APIキーはインスタンス生成時に環境変数から取得
         advice = advice_generator.generate_advice(
             analysis_data=analysis_result,
             user_concerns=user_concerns,
             user_level="intermediate",
             use_chatgpt=is_premium,
-            api_key=api_key,
+            # api_keyは一切渡さない！（環境変数のみで運用）
         )
-
-        print(f"★★受け取ったapi_key = {api_key}")
-
-        
-
-            # use_chatgpt, api_keyは省略でOK
         analysis_result['advice'] = advice
-
 
         # (10) オーバーレイ画像生成
         overlay_images = generate_overlay_images_with_dominant_hand(
@@ -224,14 +202,10 @@ def analyze_video():
             for img_path in overlay_images
         ]
 
-        # ★★ここでphase_scoresを追加！！★★
         if 'phase_analysis' in analysis_result:
             analysis_result['phase_scores'] = {k: v['score'] for k, v in analysis_result['phase_analysis'].items()}
 
-
         logger.info(f"生成オーバーレイ画像: {overlay_images}")
-
-        print("★★返すresult:",  analysis_result)
 
         return jsonify({'success': True, 'result': analysis_result})
 

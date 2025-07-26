@@ -1,12 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  SafeAreaView,
-  Dimensions,
-  Alert,
+  View, Text, StyleSheet, ScrollView, SafeAreaView, Dimensions, Alert,
 } from 'react-native';
 import { Button, Card, ProgressBar, IconButton, TextInput, Switch } from 'react-native-paper';
 import * as DocumentPicker from 'expo-document-picker';
@@ -15,11 +9,15 @@ import axios from 'axios';
 import Toast from 'react-native-toast-message';
 import ImageViewing from 'react-native-image-viewing';
 import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const { width } = Dimensions.get('window');
+import { useSkin } from '../SkinContext';
+
 const API_BASE_URL = 'http://192.168.10.105:5000';
+const FREE_LIMIT = 3;
 
 const HomeScreen = ({ navigation }) => {
+  const { skin, skinStyle, isPremium, setIsPremium } = useSkin();
   const [selectedFile, setSelectedFile] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
@@ -28,23 +26,31 @@ const HomeScreen = ({ navigation }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [userConcerns, setUserConcerns] = useState('');
   const [showShootingGuide, setShowShootingGuide] = useState(false);
-  const [apiKey, setApiKey] = useState('');
-  const [isPremium, setIsPremium] = useState(false);
+  const [usageCount, setUsageCount] = useState(0);
 
+  // 利用回数・日付リセット
   useFocusEffect(
     useCallback(() => {
-      setSelectedFile(null);
-      setAnalysisResult(null);
-      setError(null);
-      setCurrentStep(1);
-      setUploadProgress(0);
-      setUserConcerns('');
-      setApiKey('');
-      setIsPremium(false);
+      (async () => {
+        setSelectedFile(null);
+        setAnalysisResult(null);
+        setError(null);
+        setCurrentStep(1);
+        setUploadProgress(0);
+        setUserConcerns('');
+        const today = new Date().toLocaleDateString();
+        const usageDate = await AsyncStorage.getItem('usageDate');
+        if (usageDate !== today) {
+          await AsyncStorage.setItem('usageDate', today);
+          await AsyncStorage.setItem('usageCount', '0');
+          setUsageCount(0);
+        } else {
+          const count = parseInt(await AsyncStorage.getItem('usageCount') || '0');
+          setUsageCount(count);
+        }
+      })();
     }, [])
   );
-
-  const shootingGuideImages = [require('../../assets/images/camera_guide.png')];
 
   // ファイル選択
   const handleDocumentPicker = async () => {
@@ -113,6 +119,22 @@ const HomeScreen = ({ navigation }) => {
   // 解析実行
   const handleAnalyze = async () => {
     if (!selectedFile) return;
+
+    const today = new Date().toLocaleDateString();
+    const usageDate = await AsyncStorage.getItem('usageDate');
+    let count = parseInt(await AsyncStorage.getItem('usageCount') || '0');
+    if (usageDate !== today) {
+      count = 0;
+      await AsyncStorage.setItem('usageDate', today);
+      await AsyncStorage.setItem('usageCount', '0');
+    }
+    if (!isPremium && count >= FREE_LIMIT) {
+      setError(
+        '無料枠の1日あたりの解析回数（3回）に達しました。\nプレミアムプラン（解析回数無制限、広告表示無し、AIによる詳細アドバイス表示！）を御検討ください。'
+      );
+      return;
+    }
+
     setIsAnalyzing(true);
     setError(null);
     setUploadProgress(0);
@@ -123,8 +145,9 @@ const HomeScreen = ({ navigation }) => {
         type: selectedFile.type || 'video/mp4',
         name: selectedFile.name || 'video.mp4',
       });
-      formData.append('user_concerns', userConcerns);
-      formData.append('api_key', apiKey);
+      if (isPremium && userConcerns.trim()) {
+        formData.append('user_concerns', userConcerns);
+      }
       formData.append('is_premium', isPremium ? 'true' : 'false');
 
       const response = await axios.post(`${API_BASE_URL}/api/analyze`, formData, {
@@ -142,6 +165,10 @@ const HomeScreen = ({ navigation }) => {
         navigation.navigate('Result', {
           analysisResult: response.data.result,
         });
+        if (!isPremium) {
+          await AsyncStorage.setItem('usageCount', (count + 1).toString());
+          setUsageCount(count + 1);
+        }
       } else {
         setError('解析結果の形式が正しくありません');
       }
@@ -165,47 +192,48 @@ const HomeScreen = ({ navigation }) => {
     setError(null);
     setUploadProgress(0);
     setUserConcerns('');
-    setApiKey('');
-    setIsPremium(false);
   };
 
+  // 撮影ガイド画像
+  const shootingGuideImages = [require('../../assets/images/camera_guide.png')];
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, skinStyle.background]}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* ヘッダー */}
         <View style={styles.header}>
-          <Text style={styles.title}>Tennis Serve Analyzer</Text>
-          <Text style={styles.subtitle}>AI を活用したテニスサーブ動作解析</Text>
+          <Text style={[styles.title, skinStyle.title]}>Tennis Serve Analyzer</Text>
+          <Text style={[styles.subtitle, skinStyle.subtitle]}>AI を活用したテニスサーブ動作解析</Text>
+          {!isPremium && (
+            <Text style={[{ color: '#e53935', marginTop: 8, fontSize: 15 }, skinStyle.info]}>
+              本日の無料解析残回数：{Math.max(0, FREE_LIMIT - usageCount)} / {FREE_LIMIT}
+            </Text>
+          )}
         </View>
 
         {/* ステップ1: ファイル選択 */}
         {(currentStep === 1 || (currentStep === 2 && !selectedFile)) && (
-          <Card style={styles.card}>
+          <Card style={[styles.card, skinStyle.card]}>
             <Card.Content>
-              <Text style={styles.cardTitle}>動画を選択してください</Text>
-              <Text style={styles.cardDescription}>
+              <Text style={[styles.cardTitle, skinStyle.cardTitle]}>動画を選択してください</Text>
+              <Text style={[styles.cardDescription, skinStyle.cardDescription]}>
                 テニスサーブの動画をアップロードするか、カメラで撮影してください
               </Text>
-              <TextInput
-                label="サーブについて悩んでいること（任意）"
-                value={userConcerns}
-                onChangeText={setUserConcerns}
-                placeholder="例：フォームが安定しない、パワーが出ない..."
-                style={{ marginTop: 12, backgroundColor: '#fff' }}
-                multiline
-              />
-              <TextInput
-                label="OpenAI APIキー（有料ChatGPT解析用）"
-                value={apiKey}
-                onChangeText={setApiKey}
-                placeholder="sk-..."
-                secureTextEntry
-                style={{ marginTop: 12, backgroundColor: '#fff' }}
-              />
+              {isPremium && (
+                <TextInput
+                  label="悩んでいることをここに記載してね（任意）"
+                  value={userConcerns}
+                  onChangeText={setUserConcerns}
+                  placeholder="例：フォームが安定しない、パワーが出ない..."
+                  style={[{ marginTop: 12, backgroundColor: '#fff' }, skinStyle.textInput]}
+                  multiline
+                />
+              )}
               <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12 }}>
                 <Switch value={isPremium} onValueChange={setIsPremium} />
                 <Text style={{ marginLeft: 8 }}>
-                  ChatGPTの詳細アドバイス（APIキー必須）
+                  {isPremium
+                    ? 'プレミアム（詳細AIアドバイスあり）'
+                    : '無料モード（簡易解析のみ）'}
                 </Text>
               </View>
               <View style={styles.guideButtonContainer}>
@@ -246,32 +274,28 @@ const HomeScreen = ({ navigation }) => {
 
         {/* ステップ2: ファイル選択済み（解析開始画面） */}
         {currentStep === 2 && selectedFile && (
-          <Card style={styles.card}>
+          <Card style={[styles.card, skinStyle.card]}>
             <Card.Content>
-              <Text style={styles.cardTitle}>解析準備完了</Text>
-              <Text style={styles.cardDescription}>
+              <Text style={[styles.cardTitle, skinStyle.cardTitle]}>解析準備完了</Text>
+              <Text style={[styles.cardDescription, skinStyle.cardDescription]}>
                 選択されたファイル: {selectedFile.name}
               </Text>
-              <TextInput
-                label="サーブについて悩んでいること（任意）"
-                value={userConcerns}
-                onChangeText={setUserConcerns}
-                placeholder="例：フォームが安定しない、パワーが出ない..."
-                style={{ marginTop: 12, backgroundColor: '#fff' }}
-                multiline
-              />
-              <TextInput
-                label="OpenAI APIキー（有料ChatGPT解析用）"
-                value={apiKey}
-                onChangeText={setApiKey}
-                placeholder="sk-..."
-                secureTextEntry
-                style={{ marginTop: 12, backgroundColor: '#fff' }}
-              />
+              {isPremium && (
+                <TextInput
+                  label="サーブについて悩んでいること（任意）"
+                  value={userConcerns}
+                  onChangeText={setUserConcerns}
+                  placeholder="例：フォームが安定しない、パワーが出ない..."
+                  style={[{ marginTop: 12, backgroundColor: '#fff' }, skinStyle.textInput]}
+                  multiline
+                />
+              )}
               <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12 }}>
                 <Switch value={isPremium} onValueChange={setIsPremium} />
                 <Text style={{ marginLeft: 8 }}>
-                  ChatGPTの詳細アドバイス（APIキー必須）
+                  {isPremium
+                    ? 'プレミアム（詳細AIアドバイスあり）'
+                    : '無料モード（簡易解析のみ）'}
                 </Text>
               </View>
               {isAnalyzing ? (
@@ -305,9 +329,13 @@ const HomeScreen = ({ navigation }) => {
         )}
 
         {error && (
-          <Card style={styles.errorCard}>
+          <Card style={[styles.errorCard, skinStyle.errorCard]}>
             <Card.Content>
-              <Text style={styles.errorText}>{error}</Text>
+              <Text style={[styles.errorText, skinStyle.errorText]}>
+                {error.split('\n').map((line, idx) => (
+                  <Text key={idx}>{line}{'\n'}</Text>
+                ))}
+              </Text>
             </Card.Content>
           </Card>
         )}
