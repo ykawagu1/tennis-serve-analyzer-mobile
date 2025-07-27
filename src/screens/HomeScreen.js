@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, SafeAreaView, Dimensions, Alert,
+  View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Alert,
 } from 'react-native';
 import { Button, Card, ProgressBar, IconButton, TextInput, Switch } from 'react-native-paper';
 import * as DocumentPicker from 'expo-document-picker';
@@ -12,13 +12,13 @@ import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useSkin } from '../SkinContext';
+import AnimatedGradientBackground from '../components/AnimatedGradientBackground';
 
-const API_BASE_URL = 'http://192.168.10.105:5000';
+const API_BASE_URL = 'http://192.168.10.117:5000';
 const FREE_LIMIT = 3;
 
-
 const HomeScreen = ({ navigation }) => {
-  const { skin, skinStyle, isPremium, setIsPremium } = useSkin();
+  const { skin, skinStyle, skinKey, isPremium, setIsPremium } = useSkin();
   const [selectedFile, setSelectedFile] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
@@ -195,182 +195,207 @@ const HomeScreen = ({ navigation }) => {
     setUserConcerns('');
   };
 
-  // 撮影ガイド画像
   const shootingGuideImages = [require('../../assets/images/camera_guide.png')];
 
-  return (
-    <SafeAreaView style={[styles.container, skinStyle.background]}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={[styles.title, skinStyle.title]}>Tennis Serve Analyzer</Text>
-          <Text style={[styles.subtitle, skinStyle.subtitle]}>AI を活用したテニスサーブ動作解析</Text>
-          {!isPremium && (
-            <Text style={[{ color: '#e53935', marginTop: 8, fontSize: 15 }, skinStyle.info]}>
-              本日の無料解析残回数：{Math.max(0, FREE_LIMIT - usageCount)} / {FREE_LIMIT}
-            </Text>
-          )}
-        </View>
+  // ======== ここから分岐UIラップ ========
+  const isGradient = isPremium && skinKey === 'gradient-blue';
 
-        {/* ステップ1: ファイル選択 */}
-        {(currentStep === 1 || (currentStep === 2 && !selectedFile)) && (
-          <Card style={[styles.card, skinStyle.card]}>
-            <Card.Content>
-              <Text style={[styles.cardTitle, skinStyle.cardTitle]}>動画を選択してください</Text>
-              <Text style={[styles.cardDescription, skinStyle.cardDescription]}>
-                テニスサーブの動画をアップロードするか、カメラで撮影してください
+  const Content = (
+    <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <View style={styles.header}>
+        <Text style={[styles.title, skinStyle.title]}>Tennis Serve Analyzer</Text>
+        <Text style={[styles.subtitle, skinStyle.subtitle]}>AI を活用したテニスサーブ動作解析</Text>
+        {!isPremium && (
+          <Text style={[{ color: '#e53935', marginTop: 8, fontSize: 15 }, skinStyle.info]}>
+            本日の無料解析残回数：{Math.max(0, FREE_LIMIT - usageCount)} / {FREE_LIMIT}
+          </Text>
+        )}
+      </View>
+
+      {/* ステップ1: ファイル選択 */}
+      {(currentStep === 1 || (currentStep === 2 && !selectedFile)) && (
+        <Card style={[styles.card, skinStyle.card]}>
+          <Card.Content>
+            <Text style={[styles.cardTitle, skinStyle.cardTitle]}>動画を選択してください</Text>
+            <Text style={[styles.cardDescription, skinStyle.cardDescription]}>
+              テニスサーブの動画をアップロードするか、カメラで撮影してください
+            </Text>
+            {isPremium && (
+              <TextInput
+                label="悩んでいることをここに記載してね（任意）"
+                value={userConcerns}
+                onChangeText={setUserConcerns}
+                placeholder="例：フォームが安定しない、パワーが出ない..."
+                style={[{ marginTop: 12, backgroundColor: '#fff' }, skinStyle.textInput]}
+                multiline
+              />
+            )}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12 }}>
+              <Switch value={isPremium} onValueChange={setIsPremium} />
+              <Text style={{ marginLeft: 8 }}>
+                {isPremium
+                  ? 'プレミアム（詳細AIアドバイスあり）'
+                  : '無料モード（簡易解析のみ）'}
               </Text>
-              {isPremium && (
-                <TextInput
-                  label="悩んでいることをここに記載してね（任意）"
-                  value={userConcerns}
-                  onChangeText={setUserConcerns}
-                  placeholder="例：フォームが安定しない、パワーが出ない..."
-                  style={[{ marginTop: 12, backgroundColor: '#fff' }, skinStyle.textInput]}
-                  multiline
-                />
-              )}
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12 }}>
-                <Switch value={isPremium} onValueChange={setIsPremium} />
-                <Text style={{ marginLeft: 8 }}>
-                  {isPremium
-                    ? 'プレミアム（詳細AIアドバイスあり）'
-                    : '無料モード（簡易解析のみ）'}
-                </Text>
+            </View>
+            <View style={styles.guideButtonContainer}>
+              <Button
+                mode="outlined"
+                onPress={() => setShowShootingGuide(true)}
+                style={styles.guideButton}
+                icon="information"
+                compact
+              >
+                撮影ガイド
+              </Button>
+            </View>
+            <View style={styles.buttonContainer}>
+              <Button
+                mode="contained"
+                onPress={handleDocumentPicker}
+                style={styles.button}
+                icon="file-video"
+              >
+                ファイルを選択
+              </Button>
+              <Button
+                mode="outlined"
+                onPress={handleCameraCapture}
+                style={styles.button}
+                icon="camera"
+              >
+                カメラで撮影
+              </Button>
+            </View>
+            <Text style={styles.note}>
+              対応形式: MP4, AVI, MOV, MKV (最大100MB)
+            </Text>
+          </Card.Content>
+        </Card>
+      )}
+
+      {/* ステップ2: ファイル選択済み（解析開始画面） */}
+      {currentStep === 2 && selectedFile && (
+        <Card style={[styles.card, skinStyle.card]}>
+          <Card.Content>
+            <Text style={[styles.cardTitle, skinStyle.cardTitle]}>解析準備完了</Text>
+            <Text style={[styles.cardDescription, skinStyle.cardDescription]}>
+              選択されたファイル: {selectedFile.name}
+            </Text>
+            {isPremium && (
+              <TextInput
+                label="サーブについて悩んでいること（任意）"
+                value={userConcerns}
+                onChangeText={setUserConcerns}
+                placeholder="例：フォームが安定しない、パワーが出ない..."
+                style={[{ marginTop: 12, backgroundColor: '#fff' }, skinStyle.textInput]}
+                multiline
+              />
+            )}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12 }}>
+              <Switch value={isPremium} onValueChange={setIsPremium} />
+              <Text style={{ marginLeft: 8 }}>
+                {isPremium
+                  ? 'プレミアム（詳細AIアドバイスあり）'
+                  : '無料モード（簡易解析のみ）'}
+              </Text>
+            </View>
+            {isAnalyzing ? (
+              <View style={styles.progressContainer}>
+                <Text style={styles.progressText}>解析中...</Text>
+                <ProgressBar progress={uploadProgress / 100} style={styles.progressBar} />
+                <Text style={styles.progressPercent}>{uploadProgress}%</Text>
               </View>
-              <View style={styles.guideButtonContainer}>
-                <Button
-                  mode="outlined"
-                  onPress={() => setShowShootingGuide(true)}
-                  style={styles.guideButton}
-                  icon="information"
-                  compact
-                >
-                  撮影ガイド
-                </Button>
-              </View>
+            ) : (
               <View style={styles.buttonContainer}>
                 <Button
                   mode="contained"
-                  onPress={handleDocumentPicker}
+                  onPress={handleAnalyze}
                   style={styles.button}
-                  icon="file-video"
+                  icon="play"
                 >
-                  ファイルを選択
+                  解析開始
                 </Button>
                 <Button
                   mode="outlined"
-                  onPress={handleCameraCapture}
+                  onPress={handleReset}
                   style={styles.button}
-                  icon="camera"
+                  icon="refresh"
                 >
-                  カメラで撮影
+                  やり直し
                 </Button>
               </View>
-              <Text style={styles.note}>
-                対応形式: MP4, AVI, MOV, MKV (最大100MB)
-              </Text>
-            </Card.Content>
-          </Card>
-        )}
+            )}
+          </Card.Content>
+        </Card>
+      )}
 
-        {/* ステップ2: ファイル選択済み（解析開始画面） */}
-        {currentStep === 2 && selectedFile && (
-          <Card style={[styles.card, skinStyle.card]}>
-            <Card.Content>
-              <Text style={[styles.cardTitle, skinStyle.cardTitle]}>解析準備完了</Text>
-              <Text style={[styles.cardDescription, skinStyle.cardDescription]}>
-                選択されたファイル: {selectedFile.name}
-              </Text>
-              {isPremium && (
-                <TextInput
-                  label="サーブについて悩んでいること（任意）"
-                  value={userConcerns}
-                  onChangeText={setUserConcerns}
-                  placeholder="例：フォームが安定しない、パワーが出ない..."
-                  style={[{ marginTop: 12, backgroundColor: '#fff' }, skinStyle.textInput]}
-                  multiline
-                />
-              )}
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12 }}>
-                <Switch value={isPremium} onValueChange={setIsPremium} />
-                <Text style={{ marginLeft: 8 }}>
-                  {isPremium
-                    ? 'プレミアム（詳細AIアドバイスあり）'
-                    : '無料モード（簡易解析のみ）'}
-                </Text>
-              </View>
-              {isAnalyzing ? (
-                <View style={styles.progressContainer}>
-                  <Text style={styles.progressText}>解析中...</Text>
-                  <ProgressBar progress={uploadProgress / 100} style={styles.progressBar} />
-                  <Text style={styles.progressPercent}>{uploadProgress}%</Text>
-                </View>
-              ) : (
-                <View style={styles.buttonContainer}>
-                  <Button
-                    mode="contained"
-                    onPress={handleAnalyze}
-                    style={styles.button}
-                    icon="play"
-                  >
-                    解析開始
-                  </Button>
-                  <Button
-                    mode="outlined"
-                    onPress={handleReset}
-                    style={styles.button}
-                    icon="refresh"
-                  >
-                    やり直し
-                  </Button>
-                </View>
-              )}
-            </Card.Content>
-          </Card>
-        )}
-
-        {error && (
-          <Card style={[styles.errorCard, skinStyle.errorCard]}>
-            <Card.Content>
-              <Text style={[styles.errorText, skinStyle.errorText]}>
-                {error.split('\n').map((line, idx) => (
-                  <Text key={idx}>{line}{'\n'}</Text>
-                ))}
-              </Text>
-            </Card.Content>
-          </Card>
-        )}
-      </ScrollView>
-
-      {/* 撮影ガイドモーダル */}
-      <ImageViewing
-        images={shootingGuideImages}
-        imageIndex={0}
-        visible={showShootingGuide}
-        onRequestClose={() => setShowShootingGuide(false)}
-        HeaderComponent={({ onRequestClose }) => (
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>撮影ガイド</Text>
-            <IconButton
-              icon="close"
-              iconColor="#fff"
-              size={24}
-              onPress={onRequestClose}
-            />
-          </View>
-        )}
-        FooterComponent={() => (
-          <View style={styles.modalFooter}>
-            <Text style={styles.modalFooterText}>
-              正確な解析のために、ガイドに従って撮影してください。
+      {error && (
+        <Card style={[styles.errorCard, skinStyle.errorCard]}>
+          <Card.Content>
+            <Text style={[styles.errorText, skinStyle.errorText]}>
+              {error.split('\n').map((line, idx) => (
+                <Text key={idx}>{line}{'\n'}</Text>
+              ))}
             </Text>
-          </View>
-        )}
-      />
-
+          </Card.Content>
+        </Card>
+      )}
       <Toast />
-    </SafeAreaView>
+    </ScrollView>
   );
+
+  // ========= グラデーション背景 or 通常背景 ===========
+
+  const GuideModal = (
+    <ImageViewing
+      images={shootingGuideImages}
+      imageIndex={0}
+      visible={showShootingGuide}
+      onRequestClose={() => setShowShootingGuide(false)}
+      HeaderComponent={({ onRequestClose }) => (
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>撮影ガイド</Text>
+          <TouchableOpacity
+            onPress={() => {
+              setShowShootingGuide(false);
+              if (onRequestClose) onRequestClose();
+            }}
+            style={{ padding: 6, marginLeft: 8 }}
+            hitSlop={{ top: 12, left: 12, bottom: 12, right: 12 }}
+            accessibilityLabel="ガイドを閉じる"
+          >
+            <IconButton icon="close" iconColor="#fff" size={28} style={{ margin: 0, padding: 0, backgroundColor: 'rgba(40,40,40,0.4)' }} />
+          </TouchableOpacity>
+        </View>
+      )}
+      FooterComponent={() => (
+        <View style={styles.modalFooter}>
+          <Text style={styles.modalFooterText}>
+            正確な解析のために、ガイドに従って撮影してください。
+          </Text>
+        </View>
+      )}
+    />
+  );
+
+  if (isGradient) {
+    return (
+      <AnimatedGradientBackground>
+        <SafeAreaView style={[styles.container, skinStyle.background]}>
+          {Content}
+          {GuideModal}
+        </SafeAreaView>
+      </AnimatedGradientBackground>
+    );
+  } else {
+    return (
+      <SafeAreaView style={[styles.container, skinStyle.background]}>
+        {Content}
+        {GuideModal}
+      </SafeAreaView>
+    );
+  }
 };
 
 const styles = StyleSheet.create({
@@ -394,7 +419,15 @@ const styles = StyleSheet.create({
   progressPercent: { fontSize: 14, color: '#666' },
   errorCard: { backgroundColor: '#ffebee', marginBottom: 16 },
   errorText: { color: '#c62828', textAlign: 'center' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: 'rgba(0, 0, 0, 0.8)' },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    zIndex: 99,
+  },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
   modalFooter: { padding: 16, backgroundColor: 'rgba(0, 0, 0, 0.8)', alignItems: 'center' },
   modalFooterText: { fontSize: 14, color: '#fff', textAlign: 'center', lineHeight: 20 },

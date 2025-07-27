@@ -11,11 +11,26 @@ import {
 import { Card, Button, Divider } from 'react-native-paper';
 import { useSkin } from '../SkinContext';
 
+// 各グラデーション背景をインポート
+import AnimatedGradientBackground from '../components/AnimatedGradientBackground'; // blue
+import AnimatedRedGradientBackground from '../components/AnimatedRedGradientBackground';
+import AnimatedPurpleGradientBackground from '../components/AnimatedPurpleGradientBackground';
+import AnimatedSunsetGradientBackground from '../components/AnimatedSunsetGradientBackground';
+import AnimatedGreenGradientBackground from '../components/AnimatedGreenGradientBackground';
+
 const { width } = Dimensions.get('window');
+
+const gradientComponents = {
+  'gradient-blue': AnimatedGradientBackground,
+  'gradient-red': AnimatedRedGradientBackground,
+  'gradient-purple': AnimatedPurpleGradientBackground,
+  'gradient-sunset': AnimatedSunsetGradientBackground,
+  'gradient-green': AnimatedGreenGradientBackground,
+};
 
 const ResultScreen = ({ route, navigation }) => {
   const { analysisResult } = route.params;
-  const { skin } = useSkin(); // skinStyleは使わずskinのみ
+  const { skin, skinKey, isPremium } = useSkin();
 
   // 軽いMarkdown風整形
   const formatAIResponse = (text) => {
@@ -55,160 +70,174 @@ const ResultScreen = ({ route, navigation }) => {
     return elements;
   };
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: skin.background }]}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* 総合スコア */}
-        {analysisResult.overall_score && (
-          <Card style={[styles.scoreCard, { backgroundColor: skin.background, borderColor: skin.primary, borderWidth: 1 }]}>
-            <Card.Content style={styles.scoreContent}>
-              <Text style={[styles.scoreLabel, { color: skin.text }]}>総合スコア</Text>
-              <Text style={[styles.scoreValue, { color: skin.primary }]}>
-                {Number(analysisResult.overall_score).toFixed(2)}/10
-              </Text>
-              <Text style={[styles.scoreDescription, { color: skin.text }]}>
-                あなたのテニスサーブの総合評価です
-              </Text>
-            </Card.Content>
-          </Card>
-        )}
-
-        {/* フェーズ別評価 */}
-        {analysisResult.phase_scores && (
-          <Card style={[styles.card, { backgroundColor: skin.background }]}>
-            <Card.Content>
-              <Text style={[styles.cardTitle, { color: skin.primary }]}>フェーズ別評価</Text>
-              <Divider style={styles.divider} />
-              {Object.entries(analysisResult.phase_scores).map(([phase, score]) => (
-                <View key={phase} style={styles.phaseItem}>
-                  <Text style={[styles.phaseLabel, { color: skin.text }]}>{phase}</Text>
-                  <View style={styles.scoreContainer}>
-                    <Text style={[styles.phaseScore, { color: skin.primary }]}>{score}/10</Text>
-                    <View style={styles.scoreBar}>
-                      <View
-                        style={[
-                          styles.scoreBarFill,
-                          { backgroundColor: skin.primary, width: `${(score / 10) * 100}%` }
-                        ]}
-                      />
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </Card.Content>
-          </Card>
-        )}
-
-        {/* オーバーレイ画像表示 */}
-        {analysisResult.overlay_images && analysisResult.overlay_images.length > 0 && (
-          <Card style={[styles.card, { backgroundColor: skin.background }]}>
-            <Card.Content>
-              <Text style={[styles.cardTitle, { color: skin.primary }]}>オーバーレイ画像</Text>
-              <ScrollView>
-                {analysisResult.overlay_images.map((img, idx) => (
-                  <View key={idx} style={{ marginRight: 16, alignItems: 'center' }}>
-                    <Text style={{ fontSize: 14, color: skin.text, marginBottom: 8 }}>
-                      ポーズ {idx + 1}
-                    </Text>
-                    <Image
-                      source={{ uri: 'http://192.168.10.105:5000' + img }}
-                      style={{
-                        width: 220,
-                        height: 140,
-                        borderRadius: 12,
-                        backgroundColor: '#ccc',
-                        resizeMode: 'contain'
-                      }}
-                    />
-                  </View>
-                ))}
-              </ScrollView>
-            </Card.Content>
-          </Card>
-        )}
-
-        {/* 基本解析結果 */}
-        {analysisResult.basic_analysis && (
-          <Card style={[styles.card, { backgroundColor: skin.background }]}>
-            <Card.Content>
-              <Text style={[styles.cardTitle, { color: skin.primary }]}>基本解析結果</Text>
-              <Divider style={styles.divider} />
-              <Text style={[styles.analysisText, { color: skin.text }]}>{analysisResult.basic_analysis}</Text>
-            </Card.Content>
-          </Card>
-        )}
-
-        {/* Basic Advice */}
-        {analysisResult.advice && analysisResult.advice.basic_advice && (
-          <Card style={[styles.card, { backgroundColor: skin.background }]}>
-            <Card.Content>
-              <Text style={[styles.cardTitle, { color: skin.primary }]}>基本アドバイス</Text>
-              <Divider style={styles.divider} />
-              <Text style={[styles.analysisText, { color: skin.text }]}>{analysisResult.advice.basic_advice}</Text>
-            </Card.Content>
-          </Card>
-        )}
-
-        {/* AI詳細アドバイス */}
-        <Card style={[styles.card, { backgroundColor: skin.background }]}>
-          <Card.Content>
-            <Text style={[styles.cardTitle, { color: skin.primary }]}>AI詳細アドバイス</Text>
-            <Divider style={styles.divider} />
-            <Text style={[{ fontWeight: 'bold', marginBottom: 8, color: skin.text }]}>
-              {analysisResult.advice?.enhanced ? 'ChatGPTによる詳細アドバイス' : '基本アドバイス'}
+  // メインContent部分
+  const Content = (
+    <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      {/* --- 総合スコア --- */}
+      {analysisResult.overall_score && (
+        <Card style={[styles.scoreCard, { backgroundColor: skin.background, borderColor: skin.primary, borderWidth: 1 }]}>
+          <Card.Content style={styles.scoreContent}>
+            <Text style={[styles.scoreLabel, { color: skin.text }]}>総合スコア</Text>
+            <Text style={[styles.scoreValue, { color: skin.primary }]}>
+              {Number(analysisResult.overall_score).toFixed(1)}/10
             </Text>
-            {analysisResult.advice?.detailed_advice
-              ? <View>{formatAIResponse(analysisResult.advice.detailed_advice)}</View>
-              : <Text style={{ color: '#888' }}>無料ユーザーには詳細アドバイスを表示しません。</Text>
-            }
-
-            {/* ワンポイントアドバイス */}
-            {analysisResult.advice?.one_point_advice && (
-              <View style={styles.adviceSection}>
-                <Text style={[styles.adviceTitle, { color: skin.accent }]}>ワンポイントアドバイス</Text>
-                <View style={styles.adviceContent}>
-                  {formatAIResponse(analysisResult.advice.one_point_advice)}
-                </View>
-              </View>
-            )}
-
-            {/* 改善プログラム */}
-            {analysisResult.advice?.improvement_program && (
-              <View style={styles.adviceSection}>
-                <Text style={[styles.adviceTitle, { color: skin.accent }]}>改善プログラム</Text>
-                <View style={styles.adviceContent}>
-                  {formatAIResponse(analysisResult.advice.improvement_program)}
-                </View>
-              </View>
-            )}
+            <Text style={[styles.scoreDescription, { color: skin.text }]}>
+              あなたのテニスサーブの総合評価です
+            </Text>
           </Card.Content>
         </Card>
+      )}
 
-        {/* アクションボタン */}
-        <View style={styles.buttonContainer}>
-          <Button
-            mode="contained"
-            onPress={() => navigation.goBack()}
-            style={[styles.button, { backgroundColor: skin.primary }]}
-            icon="refresh"
-            labelStyle={{ color: skin.text === '#f8f8f8' ? '#fff' : skin.text }}
-          >
-            新しい解析
-          </Button>
-          <Button
-            mode="outlined"
-            onPress={() => {
-              // 今後実装予定
-              console.log('シェア機能は今後実装予定');
-            }}
-            style={styles.button}
-            icon="share"
-            labelStyle={{ color: skin.primary }}
-          >
-            結果をシェア
-          </Button>
-        </View>
-      </ScrollView>
+      {/* --- フェーズ別評価 --- */}
+      {analysisResult.phase_scores && (
+        <Card style={[styles.card, { backgroundColor: skin.background }]}>
+          <Card.Content>
+            <Text style={[styles.cardTitle, { color: skin.primary }]}>フェーズ別評価</Text>
+            <Divider style={styles.divider} />
+            {Object.entries(analysisResult.phase_scores).map(([phase, score]) => (
+              <View key={phase} style={styles.phaseItem}>
+                <Text style={[styles.phaseLabel, { color: skin.text }]}>{phase}</Text>
+                <View style={styles.scoreContainer}>
+                  <Text style={[styles.phaseScore, { color: skin.primary }]}>{score}/10</Text>
+                  <View style={styles.scoreBar}>
+                    <View
+                      style={[
+                        styles.scoreBarFill,
+                        { backgroundColor: skin.primary, width: `${(score / 10) * 100}%` }
+                      ]}
+                    />
+                  </View>
+                </View>
+              </View>
+            ))}
+          </Card.Content>
+        </Card>
+      )}
+
+      {/* --- オーバーレイ画像 --- */}
+      {analysisResult.overlay_images && analysisResult.overlay_images.length > 0 && (
+        <Card style={[styles.card, { backgroundColor: skin.background }]}>
+          <Card.Content>
+            <Text style={[styles.cardTitle, { color: skin.primary }]}>オーバーレイ画像</Text>
+            <ScrollView >
+              {analysisResult.overlay_images.map((img, idx) => (
+                <View key={idx} style={{ marginRight: 16, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 14, color: skin.text, marginBottom: 8 }}>
+                    ポーズ {idx + 1}
+                  </Text>
+                  <Image
+                    source={{ uri: 'http://192.168.10.117:5000' + img }}
+                    style={{
+                      width: 220,
+                      height: 140,
+                      borderRadius: 12,
+                      backgroundColor: '#ccc',
+                      resizeMode: 'contain'
+                    }}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          </Card.Content>
+        </Card>
+      )}
+
+      {/* --- 基本解析結果 --- */}
+      {analysisResult.basic_analysis && (
+        <Card style={[styles.card, { backgroundColor: skin.background }]}>
+          <Card.Content>
+            <Text style={[styles.cardTitle, { color: skin.primary }]}>基本解析結果</Text>
+            <Divider style={styles.divider} />
+            <Text style={[styles.analysisText, { color: skin.text }]}>{analysisResult.basic_analysis}</Text>
+          </Card.Content>
+        </Card>
+      )}
+
+      {/* --- Basic Advice --- */}
+      {analysisResult.advice && analysisResult.advice.basic_advice && (
+        <Card style={[styles.card, { backgroundColor: skin.background }]}>
+          <Card.Content>
+            <Text style={[styles.cardTitle, { color: skin.primary }]}>基本アドバイス</Text>
+            <Divider style={styles.divider} />
+            <Text style={[styles.analysisText, { color: skin.text }]}>{analysisResult.advice.basic_advice}</Text>
+          </Card.Content>
+        </Card>
+      )}
+
+      {/* --- AI詳細アドバイス --- */}
+      <Card style={[styles.card, { backgroundColor: skin.background }]}>
+        <Card.Content>
+          <Text style={[styles.cardTitle, { color: skin.primary }]}>AI詳細アドバイス</Text>
+          <Divider style={styles.divider} />
+          <Text style={[{ fontWeight: 'bold', marginBottom: 8, color: skin.text }]}>
+            {analysisResult.advice?.enhanced ? 'ChatGPTによる詳細アドバイス' : '基本アドバイス'}
+          </Text>
+          {analysisResult.advice?.detailed_advice
+            ? <View>{formatAIResponse(analysisResult.advice.detailed_advice)}</View>
+            : <Text style={{ color: '#888' }}>無料ユーザーには詳細アドバイスを表示しません。</Text>
+          }
+
+          {/* ワンポイントアドバイス */}
+          {analysisResult.advice?.one_point_advice && (
+            <View style={styles.adviceSection}>
+              <Text style={[styles.adviceTitle, { color: skin.accent }]}>ワンポイントアドバイス</Text>
+              <View style={styles.adviceContent}>
+                {formatAIResponse(analysisResult.advice.one_point_advice)}
+              </View>
+            </View>
+          )}
+
+          {/* 改善プログラム */}
+          {analysisResult.advice?.improvement_program && (
+            <View style={styles.adviceSection}>
+              <Text style={[styles.adviceTitle, { color: skin.accent }]}>改善プログラム</Text>
+              <View style={styles.adviceContent}>
+                {formatAIResponse(analysisResult.advice.improvement_program)}
+              </View>
+            </View>
+          )}
+        </Card.Content>
+      </Card>
+
+      {/* --- アクションボタン --- */}
+      <View style={styles.buttonContainer}>
+        <Button
+          mode="contained"
+          onPress={() => navigation.goBack()}
+          style={[styles.button, { backgroundColor: skin.primary }]}
+          icon="refresh"
+          labelStyle={{ color: skin.text === '#f8f8f8' ? '#fff' : skin.text }}
+        >
+          新しい解析
+        </Button>
+        <Button
+          mode="outlined"
+          onPress={() => {
+            // 今後実装予定
+            console.log('シェア機能は今後実装予定');
+          }}
+          style={styles.button}
+          icon="share"
+          labelStyle={{ color: skin.primary }}
+        >
+          結果をシェア
+        </Button>
+      </View>
+    </ScrollView>
+  );
+
+  // ===== グラデ背景分岐（5パターン） =====
+  const GradientComponent = isPremium ? gradientComponents[skinKey] : null;
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: skin.background }]}>
+      {GradientComponent ? (
+        <GradientComponent>
+          {Content}
+        </GradientComponent>
+      ) : (
+        Content
+      )}
     </SafeAreaView>
   );
 };

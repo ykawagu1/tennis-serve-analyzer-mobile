@@ -8,31 +8,18 @@ import * as Application from 'expo-application';
 import * as Device from 'expo-device';
 import Toast from 'react-native-toast-message';
 import apiService from '../services/apiService';
-import { useSkin } from '../SkinContext';
-
-const SKIN_OPTIONS_FREE = [
-  { label: 'シンプル', value: 'classic' },
-  { label: 'ポップ', value: 'genz' },
-];
-const SKIN_OPTIONS_PREMIUM = [
-  ...SKIN_OPTIONS_FREE,
-  { label: 'アース', value: 'dark' },
-  { label: 'ミント', value: 'mint' },
-  { label: 'レトロ', value: 'retro' },
-];
+import { useSkin, SKINS } from '../SkinContext';
 
 const SettingsScreen = ({ navigation }) => {
   const { skinKey, setSkinKey, isPremium, setIsPremium } = useSkin();
   const [enableNotifications, setEnableNotifications] = useState(true);
   const [serverStatus, setServerStatus] = useState('checking');
   const [appInfo, setAppInfo] = useState({});
-  const [skinOptionList, setSkinOptionList] = useState(SKIN_OPTIONS_FREE);
 
   useEffect(() => {
     loadSettings();
     checkServerStatus();
     loadAppInfo();
-    setSkinOptionList(isPremium ? SKIN_OPTIONS_PREMIUM : SKIN_OPTIONS_FREE);
   }, [isPremium]);
 
   const loadSettings = async () => {
@@ -185,13 +172,32 @@ const SettingsScreen = ({ navigation }) => {
             </Text>
             <Divider style={styles.divider} />
             <RadioButton.Group
-              onValueChange={value => setSkinKey(value)}
+              onValueChange={value => {
+                const selectedSkin = SKINS.find(s => s.key === value);
+                if (!selectedSkin.premiumOnly || isPremium) {
+                  setSkinKey(value);
+                }
+              }}
               value={skinKey}
             >
-              {skinOptionList.map(option => (
-                <View key={option.value} style={styles.skinRadioItem}>
-                  <RadioButton value={option.value} />
-                  <Text style={styles.skinLabel}>{option.label}</Text>
+              {SKINS.map(option => (
+                <View key={option.key} style={styles.skinRadioItem}>
+                  <RadioButton
+                    value={option.key}
+                    disabled={option.premiumOnly && !isPremium}
+                    uncheckedColor={option.premiumOnly && !isPremium ? '#ccc' : undefined}
+                  />
+                  <Text
+                    style={[
+                      styles.skinLabel,
+                      option.premiumOnly && !isPremium ? { color: '#ccc' } : null,
+                    ]}
+                  >
+                    {option.name}
+                    {option.premiumOnly && (
+                      <Text style={{ color: '#e53935', fontSize: 13 }}>（プレミアム限定）</Text>
+                    )}
+                  </Text>
                 </View>
               ))}
             </RadioButton.Group>

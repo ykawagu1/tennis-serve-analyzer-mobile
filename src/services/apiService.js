@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // 開発時はローカル、本番時は適切なURLに変更
-const API_BASE_URL = __DEV__ ? 'http://192.168.10.105:5000' : 'https://your-production-api.com';
+const API_BASE_URL = __DEV__ ? 'http://192.168.10.117:5000' : 'https://your-production-api.com';
 
 class ApiService {
   constructor() {
