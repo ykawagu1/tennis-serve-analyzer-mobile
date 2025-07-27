@@ -28,6 +28,13 @@ const gradientComponents = {
   'gradient-green': AnimatedGreenGradientBackground,
 };
 
+// --- 追加：総合スコアからレベル名を返す関数 ---
+const getSkillLevel = (score) => {
+  if (score < 6) return '初心者';
+  if (score < 8) return '中級者';
+  return '上級者';
+};
+
 const ResultScreen = ({ route, navigation }) => {
   const { analysisResult } = route.params;
   const { skin, skinKey, isPremium } = useSkin();
@@ -77,12 +84,14 @@ const ResultScreen = ({ route, navigation }) => {
       {analysisResult.overall_score && (
         <Card style={[styles.scoreCard, { backgroundColor: skin.background, borderColor: skin.primary, borderWidth: 1 }]}>
           <Card.Content style={styles.scoreContent}>
-            <Text style={[styles.scoreLabel, { color: skin.text }]}>総合スコア</Text>
+            <Text style={[styles.scoreLabel, { color: skin.text }]}>Total Score</Text>
             <Text style={[styles.scoreValue, { color: skin.primary }]}>
-              {Number(analysisResult.overall_score).toFixed(1)}/10
+              {Number(analysisResult.overall_score).toFixed(1)}
             </Text>
-            <Text style={[styles.scoreDescription, { color: skin.text }]}>
-              あなたのテニスサーブの総合評価です
+            <Text style={styles.outOfTen}>/10</Text>
+            {/* ↓↓↓ ここで一行空けてラベルを表示 ↓↓↓ */}
+            <Text style={styles.skillLevelLabel}>
+              {'\n'}{getSkillLevel(Number(analysisResult.overall_score))}
             </Text>
           </Card.Content>
         </Card>
@@ -246,10 +255,47 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { padding: 16 },
-  scoreCard: { marginBottom: 16, elevation: 6 },
-  scoreContent: { alignItems: 'center', paddingVertical: 24 },
-  scoreLabel: { fontSize: 18, marginBottom: 8 },
-  scoreValue: { fontSize: 48, fontWeight: 'bold', marginBottom: 8 },
+  scoreCard: { 
+    marginBottom: 16, 
+    elevation: 6, 
+    borderRadius: 18, 
+    alignItems: 'center', 
+    paddingVertical: 32, // 上下余白を増やす 
+  },
+  scoreContent: { 
+    alignItems: 'center', 
+    justifyContent: 'center',
+  },
+  scoreLabel: { 
+    fontSize: 22, 
+    marginBottom: 12, 
+    fontWeight: '500',
+    letterSpacing: 1,
+  },
+  scoreValue: { 
+    fontSize: 70, // さらに大きく
+    fontWeight: 'bold', 
+    marginBottom: 0, 
+    lineHeight: 78,
+    textAlign: 'center',
+  },
+  outOfTen: { 
+    fontSize: 24, 
+    color: '#999', 
+    marginBottom: 0, 
+    marginTop: -8, // 8.5と詰める
+    textAlign: 'center',
+    fontWeight: '500',
+    letterSpacing: 2,
+  },
+  skillLevelLabel: {
+    fontSize: 22,
+    color: '#4caf50',
+    fontWeight: 'bold',
+    marginTop: 16, // 一行空ける
+    textAlign: 'center',
+    letterSpacing: 2,
+  },
   scoreDescription: { fontSize: 14, textAlign: 'center' },
   card: { marginBottom: 16, elevation: 4 },
   cardTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 8 },

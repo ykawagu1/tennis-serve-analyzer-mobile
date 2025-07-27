@@ -1,8 +1,15 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useSharedValue, useAnimatedStyle, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
+const { width, height } = Dimensions.get('window');
+
+// 線形補間
 function lerpColor(a, b, t) {
   const ah = a.replace('#', '');
   const bh = b.replace('#', '');
@@ -12,10 +19,10 @@ function lerpColor(a, b, t) {
   const br = parseInt(bh.substring(0, 2), 16);
   const bg = parseInt(bh.substring(2, 4), 16);
   const bb = parseInt(bh.substring(4, 6), 16);
-  const rr = Math.round(ar + (br - ar) * t);
-  const rg = Math.round(ag + (bg - ag) * t);
-  const rb = Math.round(ab + (bb - ab) * t);
-  return `rgb(${rr},${rg},${rb})`;
+  const red = Math.round(ar + (br - ar) * t);
+  const green = Math.round(ag + (bg - ag) * t);
+  const blue = Math.round(ab + (bb - ab) * t);
+  return `rgb(${red},${green},${blue})`;
 }
 
 export default function AnimatedGradientBackgroundBase({ children, colors }) {
@@ -24,34 +31,39 @@ export default function AnimatedGradientBackgroundBase({ children, colors }) {
   const [, setRender] = React.useState(0);
 
   useEffect(() => {
-    progress.value = withRepeat(withTiming(1, { duration: 6000 }), -1, true);
-    const interval = setInterval(() => setRender(x => x + 1), 80);
-    return () => clearInterval(interval);
-  }, []);
+    progress.value = withRepeat(withTiming(4, { duration: 16000 }), -1, false);
 
-  // グラデーション配列間をアニメーション補間
-  const colorSteps = 3;
-  let animatedColors = [];
-  for (let i = 0; i < colorSteps; i++) {
-    // 0→1を等間隔
-    const t = ((progress.value + i / (colorSteps - 1)) % 1);
-    // colors配列で区間判定
-    const idx = Math.floor(t * (colors.length - 1));
-    const tt = (t * (colors.length - 1)) - idx;
-    const c1 = colors[idx];
-    const c2 = colors[(idx + 1) % colors.length];
-    animatedColors.push(lerpColor(c1, c2, tt));
-  }
+    const id = setInterval(() => {
+      const v = progress.value;
+      const fromIndex = Math.floor(v) % colors.length;
+      const toIndex = (fromIndex + 1) % colors.length;
+      const frac = v - Math.floor(v);
+      const colorStart = lerpColor(colors[fromIndex], colors[toIndex], frac);
+      const colorEnd = lerpColor(colors[toIndex], colors[(toIndex + 1) % colors.length], frac);
+      colorsRef.current = [colorStart, colorEnd];
+      setRender(x => x + 1);
+    }, 30);
+
+    return () => clearInterval(id);
+  }, [colors]);
 
   return (
-    <View style={StyleSheet.absoluteFill}>
+    <Animated.View style={[styles.absolute, { zIndex: -1 }]}>
       <LinearGradient
-        colors={animatedColors}
-        start={{ x: 0.1, y: 0.2 }}
-        end={{ x: 0.9, y: 0.8 }}
-        style={StyleSheet.absoluteFill}
+        colors={colorsRef.current}
+        start={{ x: 0.0, y: 0.0 }}
+        end={{ x: 1.0, y: 1.0 }}
+        style={styles.absolute}
       />
-      {children}
-    </View>
+      <>{children}</>
+    </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  absolute: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+});
