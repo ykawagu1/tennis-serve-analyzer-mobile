@@ -12,11 +12,16 @@ import { Card, Button, Divider } from 'react-native-paper';
 import { useSkin } from '../SkinContext';
 
 // 各グラデーション背景をインポート
-import AnimatedGradientBackground from '../components/AnimatedGradientBackground'; // blue
+import AnimatedGradientBackground from '../components/AnimatedGradientBackground'; // gradient-blue
 import AnimatedRedGradientBackground from '../components/AnimatedRedGradientBackground';
 import AnimatedPurpleGradientBackground from '../components/AnimatedPurpleGradientBackground';
 import AnimatedSunsetGradientBackground from '../components/AnimatedSunsetGradientBackground';
 import AnimatedGreenGradientBackground from '../components/AnimatedGreenGradientBackground';
+import AnimatedRainbowGradientBackground from '../components/AnimatedRainbowGradientBackground';
+import AnimatedNeonPulseBackground from '../components/AnimatedNeonPulseBackground';
+import AnimatedNeonStrobeBackground from '../components/AnimatedNeonStrobeBackground';
+import AnimatedAuroraBackground from '../components/AnimatedAuroraBackground';
+import AnimatedCandyPopBackground from '../components/AnimatedCandyPopBackground';
 
 const { width } = Dimensions.get('window');
 
@@ -26,6 +31,11 @@ const gradientComponents = {
   'gradient-purple': AnimatedPurpleGradientBackground,
   'gradient-sunset': AnimatedSunsetGradientBackground,
   'gradient-green': AnimatedGreenGradientBackground,
+  'gradient-rainbow': AnimatedRainbowGradientBackground,
+  'gradient-neon': AnimatedNeonPulseBackground,
+  'gradient-strobe': AnimatedNeonStrobeBackground,
+  'gradient-aurora': AnimatedAuroraBackground,
+  'gradient-candy': AnimatedCandyPopBackground,
 };
 
 // --- 追加：総合スコアからレベル名を返す関数 ---

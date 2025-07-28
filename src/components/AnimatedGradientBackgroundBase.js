@@ -1,15 +1,10 @@
+// AnimatedGradientBackgroundBase.js
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, {
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
-const { width, height } = Dimensions.get('window');
-
-// 線形補間
+// 色補間関数
 function lerpColor(a, b, t) {
   const ah = a.replace('#', '');
   const bh = b.replace('#', '');
@@ -31,17 +26,19 @@ export default function AnimatedGradientBackgroundBase({ children, colors }) {
   const [, setRender] = React.useState(0);
 
   useEffect(() => {
+    let localProgress = 0;
     progress.value = withRepeat(withTiming(4, { duration: 16000 }), -1, false);
 
     const id = setInterval(() => {
-      const v = progress.value;
+      localProgress += 0.01;
+      const v = localProgress % colors.length;
       const fromIndex = Math.floor(v) % colors.length;
       const toIndex = (fromIndex + 1) % colors.length;
       const frac = v - Math.floor(v);
       const colorStart = lerpColor(colors[fromIndex], colors[toIndex], frac);
       const colorEnd = lerpColor(colors[toIndex], colors[(toIndex + 1) % colors.length], frac);
       colorsRef.current = [colorStart, colorEnd];
-      setRender(x => x + 1);
+      setRender(x => x + 1); // 強制再描画
     }, 30);
 
     return () => clearInterval(id);
@@ -55,7 +52,7 @@ export default function AnimatedGradientBackgroundBase({ children, colors }) {
         end={{ x: 1.0, y: 1.0 }}
         style={styles.absolute}
       />
-      <>{children}</>
+      {children}
     </Animated.View>
   );
 }

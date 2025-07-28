@@ -123,9 +123,13 @@ const SettingsScreen = ({ navigation }) => {
     }
   };
 
+  // ✅ 利用可能なスキンだけフィルターする
+  const availableSkins = SKINS.filter(s => !s.premiumOnly || isPremium);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+
         {/* サーバー状態 */}
         <Card style={styles.card}>
           <Card.Content>
@@ -140,7 +144,7 @@ const SettingsScreen = ({ navigation }) => {
           </Card.Content>
         </Card>
 
-        {/* プレミアムモード切替 */}
+        {/* プレミアム切替 */}
         <Card style={styles.card}>
           <Card.Content>
             <Text style={styles.cardTitle}>モード切替</Text>
@@ -173,26 +177,17 @@ const SettingsScreen = ({ navigation }) => {
             <Divider style={styles.divider} />
             <RadioButton.Group
               onValueChange={value => {
-                const selectedSkin = SKINS.find(s => s.key === value);
-                if (!selectedSkin.premiumOnly || isPremium) {
+                const selected = availableSkins.find(s => s.key === value);
+                if (selected) {
                   setSkinKey(value);
                 }
               }}
               value={skinKey}
             >
-              {SKINS.map(option => (
+              {availableSkins.map(option => (
                 <View key={option.key} style={styles.skinRadioItem}>
-                  <RadioButton
-                    value={option.key}
-                    disabled={option.premiumOnly && !isPremium}
-                    uncheckedColor={option.premiumOnly && !isPremium ? '#ccc' : undefined}
-                  />
-                  <Text
-                    style={[
-                      styles.skinLabel,
-                      option.premiumOnly && !isPremium ? { color: '#ccc' } : null,
-                    ]}
-                  >
+                  <RadioButton value={option.key} />
+                  <Text style={styles.skinLabel}>
                     {option.name}
                     {option.premiumOnly && (
                       <Text style={{ color: '#e53935', fontSize: 13 }}>（プレミアム限定）</Text>
@@ -204,7 +199,7 @@ const SettingsScreen = ({ navigation }) => {
           </Card.Content>
         </Card>
 
-        {/* アプリ設定 */}
+        {/* 通知設定 */}
         <Card style={styles.card}>
           <Card.Content>
             <Text style={styles.cardTitle}>アプリ設定</Text>
@@ -249,7 +244,7 @@ const SettingsScreen = ({ navigation }) => {
           </Card.Content>
         </Card>
 
-        {/* アクションボタン */}
+        {/* アクション */}
         <View style={styles.buttonContainer}>
           <Button mode="contained" onPress={saveSettings} style={styles.button} icon="content-save">
             設定を保存

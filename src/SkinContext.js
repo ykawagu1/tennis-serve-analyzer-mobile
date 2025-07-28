@@ -9,53 +9,108 @@ export const SKINS = [
   { key: 'mint', name: 'ミント', primary: '#30cfcf', background: '#e0f7fa', text: '#333', accent: '#009688', premiumOnly: false },
   { key: 'retro', name: 'レトロ', primary: '#ff9800', background: '#fff8e1', text: '#5d4037', accent: '#ff5722', premiumOnly: false },
   // プレミアム専用
-  { key: 'gradient-blue', name: 'Blue Gradient',
-    primary: '#2193b0', background: '#e3f0ff', text: '#16324f', accent: '#6dd5ed',
+  {
+    key: 'gradient-blue',
+    name: 'Blue Gradient',
+    primary: '#2193b0',
+    background: '#e3f0ff',
+    text: '#16324f',
+    accent: '#6dd5ed',
     premiumOnly: true,
-    gradient: ['#2193b0', '#6dd5ed', '#00e1ff', '#66ff99'] // お好みで
-  },
-  // ここを追加！
-  { key: 'gradient-red', name: 'Red Gradient',
-    primary: '#ff1744', background: '#fff8f7', text: '#311b1b', accent: '#ff9800',
-    premiumOnly: true,
-    gradient: ['#ff1744', '#ff9800', '#f44336', '#ffd600', '#9c27b0'] // 赤、オレンジ、紫、黄色など
+    gradient: ['#2193b0', '#6dd5ed', '#00e1ff', '#66ff99']
   },
   {
-      key: 'gradient-night',
-      name: 'Night Sky Gradient',
-      primary: '#232526',
-      background: '#414345',
-      text: '#f8f8f8',
-      accent: '#363795',
-      premiumOnly: true,
-      gradient: ['#232526', '#414345', '#005c97', '#363795'],
-    },
-    {
-      key: 'gradient-rainbow',
-      name: 'Rainbow Gradient',
-      primary: '#ff6e7f',
-      background: '#f7ff00',
-      text: '#232526',
-      accent: '#43cea2',
-      premiumOnly: true,
-      gradient: [
-        '#ff6e7f', '#bfe9ff', '#f7ff00', '#43cea2',
-        '#185a9d', '#a8ff78', '#f7971e'
-      ],
-    },
-  {
-    key: 'gradient-gold',
-    name: 'Gold Gradient',
-    primary: '#f7971e',
-    background: '#fff6b7',
-    text: '#795548',
-    accent: '#ffd200',
+    key: 'gradient-red',
+    name: 'Red Gradient',
+    primary: '#ff1744',
+    background: '#fff8f7',
+    text: '#311b1b',
+    accent: '#ff9800',
     premiumOnly: true,
-    gradient: ['#f7971e', '#ffd200', '#fff6b7', '#fff'],
+    gradient: ['#ff1744', '#ff9800', '#f44336', '#ffd600', '#9c27b0']
   },
-
-
-
+  {
+    key: 'gradient-purple',
+    name: 'Purple Gradient',
+    primary: '#9c27b0',
+    background: '#f3e5f5',
+    text: '#4a148c',
+    accent: '#ce93d8',
+    premiumOnly: true,
+    gradient: ['#9c27b0', '#673ab7', '#512da8', '#9575cd']
+  },
+  {
+    key: 'gradient-green',
+    name: 'Green Gradient',
+    primary: '#43cea2',
+    background: '#e0f2f1',
+    text: '#1b5e20',
+    accent: '#00bfa5',
+    premiumOnly: true,
+    gradient: ['#43cea2', '#185a9d', '#00c853', '#a8e063']
+  },
+  {
+    key: 'gradient-sunset',
+    name: 'Sunset Gradient',
+    primary: '#ff7e5f',
+    background: '#fff3e0',
+    text: '#4e342e',
+    accent: '#feb47b',
+    premiumOnly: true,
+    gradient: ['#ff7e5f', '#feb47b', '#fd746c', '#ffcc70']
+  },
+  {
+  key: 'gradient-rainbow',
+  name: 'Rainbow Gradient',
+  primary: '#ff6e7f',
+  background: '#fffde7',
+  text: '#232526',
+  accent: '#43cea2',
+  premiumOnly: true,
+  gradient: [
+    '#ff5f6d', '#ffc371', '#47cf73', '#3c9ee7', '#a259c1'
+  ],
+},
+{
+  key: 'gradient-neon',
+  name: 'Neon Pulse',
+  primary: '#00fff0',
+  background: '#1a0037',
+  text: '#fff',
+  accent: '#ff00ea',
+  premiumOnly: true,
+  gradient: ['#00fff0', '#ff00ea', '#2300ff', '#00ffe7', '#00ffae', '#f8ff00', '#ff1d77'],
+},
+{
+  key: 'gradient-strobe',
+  name: 'Neon Strobe',
+  primary: '#fff600',
+  background: '#111',
+  text: '#ff0000',
+  accent: '#00ffea',
+  premiumOnly: true,
+  gradient: ['#fff600', '#ff0000', '#00ffea', '#ff00ec', '#fff', '#000'],
+},
+{
+  key: 'gradient-aurora',
+  name: 'Aurora Flow',
+  primary: '#00ffc8',
+  background: '#161e2c',
+  text: '#fff',
+  accent: '#ffff1c',
+  premiumOnly: true,
+  gradient: ['#00c3ff', '#ffff1c', '#00ffc8', '#ff61a6', '#293462'],
+},
+{
+  key: 'gradient-candy',
+  name: 'Candy Pop',
+  primary: '#fcb69f',
+  background: '#fff5ef',
+  text: '#333',
+  accent: '#a1c4fd',
+  premiumOnly: true,
+  gradient: ['#ffecd2', '#fcb69f', '#a1c4fd', '#c2e9fb'],
+},
 ];
 
 export const SkinContext = createContext({
