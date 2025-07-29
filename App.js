@@ -13,6 +13,7 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import PermissionManager from './src/components/PermissionManager';
 
 import { SkinProvider, useSkin } from './src/SkinContext';
+import FAQScreen from './src/screens/FAQScreen'; // ← フォルダ構成に合わせて修正
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -77,6 +78,17 @@ const MainStackNavigator = () => {
         component={ResultScreen}
         options={{
           title: '解析結果',
+          headerStyle: { backgroundColor: skin.primary },
+          headerTintColor: skin.text === '#f8f8f8' ? '#f8f8f8' : '#fff',
+          headerTitleStyle: { fontWeight: 'bold', fontSize: 18 },
+        }}
+      />
+      {/* ← FAQScreenをStackに追加！ */}
+      <Stack.Screen
+        name="FAQ"
+        component={FAQScreen}
+        options={{
+          title: 'よくある質問（FAQ）',
           headerStyle: { backgroundColor: skin.primary },
           headerTintColor: skin.text === '#f8f8f8' ? '#f8f8f8' : '#fff',
           headerTitleStyle: { fontWeight: 'bold', fontSize: 18 },

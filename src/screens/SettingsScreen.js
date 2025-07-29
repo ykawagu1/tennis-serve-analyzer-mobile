@@ -216,6 +216,24 @@ const SettingsScreen = ({ navigation }) => {
           </Card.Content>
         </Card>
 
+         {/* FAQ案内（ここが追加部分！） */}
+        <View style={styles.faqContainer}>
+          <Button
+            mode="outlined"
+            icon="help-circle-outline"
+            onPress={() => navigation.navigate('FAQ')}
+            style={styles.faqButton}
+            labelStyle={{ fontSize: 16 }}
+            contentStyle={{ flexDirection: 'row-reverse' }} // アイコン右寄せ
+          >
+            よくある質問（FAQ）はこちら
+          </Button>
+            <View style={{ height: 12 }} />
+          <Text style={styles.faqNote}>
+            アプリの使い方やよくある質問をまとめています。困ったときはこちらをご覧ください。
+          </Text>
+        </View>
+
         {/* アプリ情報 */}
         <Card style={styles.card}>
           <Card.Content>

@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Alert,
+  View, Text, StyleSheet, ScrollView, SafeAreaView, Alert,
 } from 'react-native';
 import { Button, Card, ProgressBar, IconButton, TextInput, Switch } from 'react-native-paper';
 import * as DocumentPicker from 'expo-document-picker';
@@ -204,7 +204,20 @@ const HomeScreen = ({ navigation }) => {
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
       <View style={styles.header}>
         <Text style={[styles.title, skinStyle.title]}>Tennis Serve Analyzer</Text>
-        <Text style={[styles.subtitle, skinStyle.subtitle]}>AI を活用したテニスサーブ動作解析</Text>
+        {/* サブタイトル＋FAQアイコンを横並び */}
+        <View style={styles.subtitleRow}>
+          <Text style={[styles.subtitle, skinStyle.subtitle]}>
+            AI を活用したテニスサーブ動作解析
+          </Text>
+          <IconButton
+            icon="help-circle-outline"
+            size={22}
+            onPress={() => navigation.navigate('FAQ')}
+            style={styles.faqIcon}
+            iconColor="#1976d2"
+            accessibilityLabel="よくある質問"
+          />
+        </View>
         {!isPremium && (
           <Text style={[{ color: '#e53935', marginTop: 8, fontSize: 15 }, skinStyle.info]}>
             本日の無料解析残回数：{Math.max(0, FREE_LIMIT - usageCount)} / {FREE_LIMIT}
@@ -356,17 +369,16 @@ const HomeScreen = ({ navigation }) => {
       HeaderComponent={({ onRequestClose }) => (
         <View style={styles.modalHeader}>
           <Text style={styles.modalTitle}>撮影ガイド</Text>
-          <TouchableOpacity
+          <IconButton
+            icon="close"
+            iconColor="#fff"
+            size={28}
             onPress={() => {
               setShowShootingGuide(false);
               if (onRequestClose) onRequestClose();
             }}
-            style={{ padding: 6, marginLeft: 8 }}
-            hitSlop={{ top: 12, left: 12, bottom: 12, right: 12 }}
-            accessibilityLabel="ガイドを閉じる"
-          >
-            <IconButton icon="close" iconColor="#fff" size={28} style={{ margin: 0, padding: 0, backgroundColor: 'rgba(40,40,40,0.4)' }} />
-          </TouchableOpacity>
+            style={{ margin: 0, padding: 0, backgroundColor: 'rgba(40,40,40,0.4)' }}
+          />
         </View>
       )}
       FooterComponent={() => (
@@ -404,7 +416,20 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 16 },
   header: { alignItems: 'center', marginBottom: 24 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#1976d2', marginBottom: 8 },
-  subtitle: { fontSize: 16, color: '#666', textAlign: 'center' },
+  // サブタイトルとFAQアイコン横並び
+  subtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 0,
+  },
+  subtitle: { fontSize: 16, color: '#666', textAlign: 'center', marginRight: 2 },
+  faqIcon: {
+    marginLeft: 2,
+    marginRight: -10, // お好みで微調整
+    backgroundColor: 'transparent',
+    elevation: 0,
+  },
   card: { marginBottom: 16, elevation: 4 },
   cardTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 8 },
   cardDescription: { fontSize: 14, color: '#666', marginBottom: 16 },
