@@ -123,9 +123,6 @@ const SettingsScreen = ({ navigation }) => {
     }
   };
 
-  // ✅ 利用可能なスキンだけフィルターする
-  const availableSkins = SKINS.filter(s => !s.premiumOnly || isPremium);
-
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -168,34 +165,51 @@ const SettingsScreen = ({ navigation }) => {
           </Card.Content>
         </Card>
 
-        {/* スキン切替 */}
+                {/* スキン切替 */}
         <Card style={styles.card}>
           <Card.Content>
             <Text style={styles.cardTitle}>
               スキン選択（{isPremium ? 'プレミアム' : '無料'}枠）
             </Text>
             <Divider style={styles.divider} />
-            <RadioButton.Group
-              onValueChange={value => {
-                const selected = availableSkins.find(s => s.key === value);
-                if (selected) {
-                  setSkinKey(value);
-                }
-              }}
-              value={skinKey}
-            >
-              {availableSkins.map(option => (
+            {SKINS.map(option => {
+              const disabled = option.premiumOnly && !isPremium;
+              const isSelected = skinKey === option.key;
+
+              return (
                 <View key={option.key} style={styles.skinRadioItem}>
-                  <RadioButton value={option.key} />
-                  <Text style={styles.skinLabel}>
+                  <RadioButton
+                    status={isSelected ? 'checked' : 'unchecked'}
+                    onPress={() => {
+                      if (disabled) {
+                        Toast.show({
+                          type: 'info',
+                          text1: 'プレミアム限定スキン',
+                          text2: 'プレミアム版にするとこのスキンも使用できます',
+                        });
+                      } else {
+                        setSkinKey(option.key);
+                      }
+                    }}
+                    uncheckedColor={disabled ? '#ccc' : undefined}
+                    color={disabled ? '#ccc' : '#1976d2'}
+                  />
+                  <Text
+                    style={[
+                      styles.skinLabel,
+                      disabled && { color: '#aaa' },
+                    ]}
+                  >
                     {option.name}
                     {option.premiumOnly && (
-                      <Text style={{ color: '#e53935', fontSize: 13 }}>（プレミアム限定）</Text>
+                      <Text style={{ color: disabled ? '#bbb' : '#e53935', fontSize: 13 }}>
+                        （プレミアム限定）
+                      </Text>
                     )}
                   </Text>
                 </View>
-              ))}
-            </RadioButton.Group>
+              );
+            })}
           </Card.Content>
         </Card>
 
@@ -216,7 +230,7 @@ const SettingsScreen = ({ navigation }) => {
           </Card.Content>
         </Card>
 
-         {/* FAQ案内（ここが追加部分！） */}
+        {/* FAQ案内 */}
         <View style={styles.faqContainer}>
           <Button
             mode="outlined"
@@ -224,11 +238,11 @@ const SettingsScreen = ({ navigation }) => {
             onPress={() => navigation.navigate('FAQ')}
             style={styles.faqButton}
             labelStyle={{ fontSize: 16 }}
-            contentStyle={{ flexDirection: 'row-reverse' }} // アイコン右寄せ
+            contentStyle={{ flexDirection: 'row-reverse' }}
           >
             よくある質問（FAQ）はこちら
           </Button>
-            <View style={{ height: 12 }} />
+          <View style={{ height: 12 }} />
           <Text style={styles.faqNote}>
             アプリの使い方やよくある質問をまとめています。困ったときはこちらをご覧ください。
           </Text>
@@ -271,6 +285,7 @@ const SettingsScreen = ({ navigation }) => {
             設定をリセット
           </Button>
         </View>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -293,6 +308,9 @@ const styles = StyleSheet.create({
   button: { marginVertical: 4 },
   skinRadioItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   skinLabel: { fontSize: 16, marginLeft: 4 },
+  faqContainer: { marginVertical: 16, alignItems: 'center' },
+  faqButton: { borderColor: '#1976d2' },
+  faqNote: { fontSize: 13, color: '#555', textAlign: 'center', marginTop: 4 },
 });
 
 export default SettingsScreen;
