@@ -14,6 +14,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSkin } from '../SkinContext';
 import AnimatedGradientBackground from '../components/AnimatedGradientBackground';
 
+import { Image } from 'react-native'; // ←これが必要！
+
 const API_BASE_URL = 'http://192.168.10.117:5000';
 const FREE_LIMIT = 3;
 
@@ -28,6 +30,31 @@ const HomeScreen = ({ navigation }) => {
   const [userConcerns, setUserConcerns] = useState('');
   const [showShootingGuide, setShowShootingGuide] = useState(false);
   const [usageCount, setUsageCount] = useState(0);
+
+ // ナビゲーションヘッダーにロゴを設定
+ useFocusEffect(
+  useCallback(() => {
+    navigation.setOptions({
+      headerTitle: () => (
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Image
+            source={require('../../assets/tossup2.png')}
+            style={{ width: 32, height: 32, resizeMode: 'contain', marginRight: 8 }}
+          />
+          <Text style={{
+            fontSize: 20,
+            fontWeight: 'bold',
+            color: '#1976d2',
+            letterSpacing: 1,
+          }}>
+            Toss Up!
+          </Text>
+        </View>
+      ),
+    });
+  }, [navigation])
+);
+
 
   // 利用回数・日付リセット
   useFocusEffect(

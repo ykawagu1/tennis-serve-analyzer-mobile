@@ -94,6 +94,16 @@ const ResultScreen = ({ route, navigation }) => {
       {analysisResult.overall_score && (
         <Card style={[styles.scoreCard, { backgroundColor: skin.background, borderColor: skin.primary, borderWidth: 1 }]}>
           <Card.Content style={styles.scoreContent}>
+
+<View style={{ alignItems: 'center', marginBottom: 18 }}>
+        <Image
+          source={require('../../assets/tossup2.png')}
+          style={{ width: 40, height: 40, resizeMode: 'contain' }}
+        />
+      </View>
+
+
+
             <Text style={[styles.scoreLabel, { color: skin.text }]}>Total Score</Text>
             <Text style={[styles.scoreValue, { color: skin.primary }]}>
               {Number(analysisResult.overall_score).toFixed(1)}
