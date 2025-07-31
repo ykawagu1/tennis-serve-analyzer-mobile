@@ -44,7 +44,7 @@ const HomeScreen = ({ navigation }) => {
           <Text style={{
             fontSize: 20,
             fontWeight: 'bold',
-            color: '#1976d2',
+            color: '##000',
             letterSpacing: 1,
           }}>
             Toss Up!

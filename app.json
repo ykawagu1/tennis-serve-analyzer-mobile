@@ -21,7 +21,8 @@
       "infoPlist": {
         "NSCameraUsageDescription": "テニスサーブの動画を撮影するためにカメラへのアクセスが必要です。",
         "NSPhotoLibraryUsageDescription": "動画ファイルを選択するためにフォトライブラリへのアクセスが必要です。",
-        "NSMicrophoneUsageDescription": "動画撮影時に音声を録音するためにマイクへのアクセスが必要です。"
+        "NSMicrophoneUsageDescription": "動画撮影時に音声を録音するためにマイクへのアクセスが必要です。",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -64,14 +65,18 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#1976d2",
-          "sounds": ["./assets/notification.wav"]
+          "sounds": [
+            "./assets/notification.wav"
+          ]
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "extra": {
       "eas": {
-        "projectId": "your-project-id-here"
+        "projectId": "3dc7ca26-ae96-4ce4-b5bd-ab31d519fb5b"
       }
-    }
+    },
+    "owner": "ykawagu"
   }
 }

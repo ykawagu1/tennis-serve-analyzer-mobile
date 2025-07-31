@@ -1,0 +1,41 @@
+{
+  "faq_title": "Frequently Asked Questions",
+  "faq_items": [
+    {
+      "q": "What can I do with this app?",
+      "a": "You can record your tennis serve with video, and the AI will automatically analyze your form, score it, and provide one-point advice. You can also easily share your scorecard on social media. The premium version offers more detailed AI advice."
+    },
+    {
+      "q": "What kind of video works best for AI analysis?",
+      "a": "We recommend a video that clearly shows your entire body while serving alone. Place the camera diagonally behind the service line for the best results."
+    },
+    {
+      "q": "How many serves can I analyze?",
+      "a": "Free users can analyze up to 3 serves per day. Premium members can analyze as many serves as they want with no daily limit."
+    },
+    {
+      "q": "What are the differences between the free and premium versions?",
+      "a": "The free version shows ads and has a daily analysis limit. The premium version removes ads, allows unlimited analysis, unlocks premium skins, and provides detailed AI advice."
+    },
+    {
+      "q": "How much does the premium plan cost, and how do I pay?",
+      "a": "The premium plan costs ¥300 per month (or ¥3,000 per year for a discounted rate). Payment is made via a subscription through the App Store or Google Play."
+    },
+    {
+      "q": "What should I do if AI advice or scores are not displayed?",
+      "a": "If there is a delay in displaying advice or scores, it may be due to network conditions or server load. If restarting the app doesn't help, please contact support."
+    },
+    {
+      "q": "Where are uploaded videos and analysis results saved?",
+      "a": "Uploaded videos and analysis results are not saved. They are automatically deleted."
+    },
+    {
+      "q": "How can I share analysis results with friends or coaches?",
+      "a": "You can easily share results using the 'Share' button on the results screen via SNS, email, LINE, etc. You can also save the scorecard image to your device and share it."
+    },
+    {
+      "q": "What should I do if the app is not working properly or I find a bug?",
+      "a": "Please contact us from the 'Settings' screen or the inquiry form on the help page. We will respond promptly."
+    }
+  ]
+}
