@@ -3,7 +3,6 @@ import {
   View, Text, StyleSheet, ScrollView, SafeAreaView, Alert,
 } from 'react-native';
 import { Button, Card, ProgressBar, IconButton, TextInput, Switch } from 'react-native-paper';
-import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
@@ -14,9 +13,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSkin } from '../SkinContext';
 import AnimatedGradientBackground from '../components/AnimatedGradientBackground';
 
-import { Image } from 'react-native'; // ←これが必要！
+import { Image } from 'react-native';
 
-const API_BASE_URL = 'http://192.168.10.117:5000';
+const API_BASE_URL = 'http://192.168.10.117:5001';
 const FREE_LIMIT = 3;
 
 const HomeScreen = ({ navigation }) => {
@@ -31,30 +30,29 @@ const HomeScreen = ({ navigation }) => {
   const [showShootingGuide, setShowShootingGuide] = useState(false);
   const [usageCount, setUsageCount] = useState(0);
 
- // ナビゲーションヘッダーにロゴを設定
- useFocusEffect(
-  useCallback(() => {
-    navigation.setOptions({
-      headerTitle: () => (
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Image
-            source={require('../../assets/tossup2.png')}
-            style={{ width: 32, height: 32, resizeMode: 'contain', marginRight: 8 }}
-          />
-          <Text style={{
-            fontSize: 20,
-            fontWeight: 'bold',
-            color: '##000',
-            letterSpacing: 1,
-          }}>
-            Toss Up!
-          </Text>
-        </View>
-      ),
-    });
-  }, [navigation])
-);
-
+  // ナビゲーションヘッダーにロゴを設定
+  useFocusEffect(
+    useCallback(() => {
+      navigation.setOptions({
+        headerTitle: () => (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Image
+              source={require('../../assets/tossup2.png')}
+              style={{ width: 32, height: 32, resizeMode: 'contain', marginRight: 8 }}
+            />
+            <Text style={{
+              fontSize: 20,
+              fontWeight: 'bold',
+              color: '#000',
+              letterSpacing: 1,
+            }}>
+              Toss Up!
+            </Text>
+          </View>
+        ),
+      });
+    }, [navigation])
+  );
 
   // 利用回数・日付リセット
   useFocusEffect(
@@ -80,31 +78,43 @@ const HomeScreen = ({ navigation }) => {
     }, [])
   );
 
-  // ファイル選択
-  const handleDocumentPicker = async () => {
+  // フォトライブラリから動画選択
+  const handleImageLibraryPicker = async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'video/*',
-        copyToCacheDirectory: true,
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('権限エラー', '写真ライブラリへのアクセス権限が必要です。');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        allowsEditing: false,
+        quality: 1,
       });
+
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
-        if (file.size > 100 * 1024 * 1024) {
+        if (file.fileSize > 100 * 1024 * 1024) {
           Alert.alert('エラー', 'ファイルサイズが大きすぎます。100MB以下のファイルを選択してください。');
           return;
         }
-        setSelectedFile(file);
+        setSelectedFile({
+          uri: file.uri,
+          name: file.fileName || `video_${Date.now()}.mp4`,
+          type: file.type || 'video/mp4',
+          size: file.fileSize || 0,
+        });
         setError(null);
         setCurrentStep(2);
         Toast.show({
           type: 'success',
-          text1: 'ファイル選択完了',
-          text2: file.name,
+          text1: '動画選択完了',
+          text2: file.fileName || '選択した動画',
         });
       }
     } catch (err) {
-      console.error('ファイル選択エラー:', err);
-      Alert.alert('エラー', 'ファイル選択中にエラーが発生しました。');
+      console.error('動画選択エラー:', err);
+      Alert.alert('エラー', '動画選択中にエラーが発生しました。');
     }
   };
 
@@ -231,7 +241,6 @@ const HomeScreen = ({ navigation }) => {
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
       <View style={styles.header}>
         <Text style={[styles.title, skinStyle.title]}>Tennis Serve Analyzer</Text>
-        {/* サブタイトル＋FAQアイコンを横並び */}
         <View style={styles.subtitleRow}>
           <Text style={[styles.subtitle, skinStyle.subtitle]}>
             AI を活用したテニスサーブ動作解析
@@ -252,7 +261,6 @@ const HomeScreen = ({ navigation }) => {
         )}
       </View>
 
-      {/* ステップ1: ファイル選択 */}
       {(currentStep === 1 || (currentStep === 2 && !selectedFile)) && (
         <Card style={[styles.card, skinStyle.card]}>
           <Card.Content>
@@ -292,11 +300,11 @@ const HomeScreen = ({ navigation }) => {
             <View style={styles.buttonContainer}>
               <Button
                 mode="contained"
-                onPress={handleDocumentPicker}
+                onPress={handleImageLibraryPicker}  // 変更点
                 style={styles.button}
                 icon="file-video"
               >
-                ファイルを選択
+                フォトライブラリから動画選択
               </Button>
               <Button
                 mode="outlined"
@@ -314,7 +322,6 @@ const HomeScreen = ({ navigation }) => {
         </Card>
       )}
 
-      {/* ステップ2: ファイル選択済み（解析開始画面） */}
       {currentStep === 2 && selectedFile && (
         <Card style={[styles.card, skinStyle.card]}>
           <Card.Content>
@@ -385,8 +392,6 @@ const HomeScreen = ({ navigation }) => {
     </ScrollView>
   );
 
-  // ========= グラデーション背景 or 通常背景 ===========
-
   const GuideModal = (
     <ImageViewing
       images={shootingGuideImages}
@@ -443,7 +448,6 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 16 },
   header: { alignItems: 'center', marginBottom: 24 },
   title: { fontSize: 28, fontWeight: 'bold', color: '#1976d2', marginBottom: 8 },
-  // サブタイトルとFAQアイコン横並び
   subtitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -453,7 +457,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 16, color: '#666', textAlign: 'center', marginRight: 2 },
   faqIcon: {
     marginLeft: 2,
-    marginRight: -10, // お好みで微調整
+    marginRight: -10,
     backgroundColor: 'transparent',
     elevation: 0,
   },
@@ -470,7 +474,7 @@ const styles = StyleSheet.create({
   progressBar: { width: '100%', height: 8, marginBottom: 8 },
   progressPercent: { fontSize: 14, color: '#666' },
   errorCard: { backgroundColor: '#ffebee', marginBottom: 16 },
-  errorText: { color: '#c62828', textAlign: 'center' },
+  errorText: { color:'#c62828', textAlign: 'center' },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

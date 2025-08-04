@@ -155,7 +155,7 @@ const ResultScreen = ({ route, navigation }) => {
                     ポーズ {idx + 1}
                   </Text>
                   <Image
-                    source={{ uri: 'http://192.168.10.117:5000' + img }}
+                    source={{ uri: 'http://192.168.10.117:5001' + img }}
                     style={{
                       width: 220,
                       height: 140,

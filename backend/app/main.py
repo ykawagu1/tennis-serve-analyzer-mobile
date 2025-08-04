@@ -3,6 +3,7 @@
 """
 
 import os
+import argparse
 import logging
 import traceback
 import subprocess
@@ -224,5 +225,9 @@ def health_check():
     return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--port', type=int, default=5000, help='Port number')
+    args = parser.parse_args()
+
     logger.info("テニスサーブ解析システム起動中...")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=args.port, debug=True)
