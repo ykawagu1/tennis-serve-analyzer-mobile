@@ -9,6 +9,7 @@ import Toast from 'react-native-toast-message';
 import ImageViewing from 'react-native-image-viewing';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 import { useSkin } from '../SkinContext';
 import AnimatedGradientBackground from '../components/AnimatedGradientBackground';
@@ -242,9 +243,7 @@ const HomeScreen = ({ navigation }) => {
       <View style={styles.header}>
         <Text style={[styles.title, skinStyle.title]}>Tennis Serve Analyzer</Text>
         <View style={styles.subtitleRow}>
-          <Text style={[styles.subtitle, skinStyle.subtitle]}>
-            AI を活用したテニスサーブ動作解析
-          </Text>
+          <LanguageSwitcher />
           <IconButton
             icon="help-circle-outline"
             size={22}
