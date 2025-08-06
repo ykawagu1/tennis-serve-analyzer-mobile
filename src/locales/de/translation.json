@@ -1,0 +1,41 @@
+{
+  "faq_title": "Häufig gestellte Fragen",
+  "faq_items": [
+    {
+      "q": "Was kann ich mit dieser App machen?",
+      "a": "Sie können Ihren Tennisschlag per Video aufnehmen, und die KI analysiert automatisch Ihre Technik, vergibt eine Punktzahl und gibt Ihnen einen gezielten Tipp. Sie können Ihre Scorecard auch einfach in sozialen Medien teilen. Die Premium-Version bietet ausführlichere KI-Ratschläge."
+    },
+    {
+      "q": "Welche Art von Video eignet sich am besten für die KI-Analyse?",
+      "a": "Wir empfehlen ein Video, das Ihren gesamten Körper beim Aufschlag gut sichtbar zeigt. Platzieren Sie die Kamera am besten schräg hinter der Aufschlaglinie."
+    },
+    {
+      "q": "Wie viele Aufschläge kann ich analysieren?",
+      "a": "Kostenlose Nutzer können bis zu 3 Aufschläge pro Tag analysieren. Premium-Mitglieder können beliebig viele Aufschläge ohne Tageslimit analysieren."
+    },
+    {
+      "q": "Was sind die Unterschiede zwischen der kostenlosen und der Premium-Version?",
+      "a": "Die kostenlose Version zeigt Werbung an und hat ein tägliches Analyse-Limit. Die Premium-Version entfernt Werbung, erlaubt unbegrenzte Analysen, schaltet Premium-Skins frei und bietet ausführliche KI-Ratschläge."
+    },
+    {
+      "q": "Wie viel kostet der Premium-Plan und wie bezahle ich?",
+      "a": "Der Premium-Plan kostet 2 € pro Monat (oder 19 € pro Jahr zum ermäßigten Preis). Die Bezahlung erfolgt per Abonnement über den App Store oder Google Play."
+    },
+    {
+      "q": "Was soll ich tun, wenn KI-Ratschläge oder Punkte nicht angezeigt werden?",
+      "a": "Wenn die Anzeige von Ratschlägen oder Punkten verzögert ist, kann dies an den Netzwerkbedingungen oder der Serverauslastung liegen. Falls ein Neustart der App nicht hilft, kontaktieren Sie bitte den Support."
+    },
+    {
+      "q": "Wo werden hochgeladene Videos und Analyseergebnisse gespeichert?",
+      "a": "Hochgeladene Videos und Analyseergebnisse werden nicht gespeichert. Sie werden automatisch gelöscht."
+    },
+    {
+      "q": "Wie kann ich Analyseergebnisse mit Freunden oder Trainern teilen?",
+      "a": "Sie können die Ergebnisse einfach über die Schaltfläche 'Teilen' auf dem Ergebnisbildschirm über soziale Netzwerke, E-Mail, LINE usw. teilen. Sie können auch das Scorecard-Bild auf Ihrem Gerät speichern und teilen."
+    },
+    {
+      "q": "Was soll ich tun, wenn die App nicht richtig funktioniert oder ich einen Fehler finde?",
+      "a": "Bitte kontaktieren Sie uns über den Bildschirm 'Einstellungen' oder das Kontaktformular auf der Hilfeseite. Wir antworten Ihnen umgehend."
+    }
+  ]
+}

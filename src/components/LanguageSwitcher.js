@@ -3,12 +3,12 @@ import { View, Pressable, Text, StyleSheet } from 'react-native';
 import i18n from '../i18n';  // ←これを必ずimport！
 
 const LANGUAGES = [
-  { code: 'ja', label: '日本語', flag: '🇯🇵' },
-  { code: 'en', label: 'English', flag: '🇺🇸' },
+  { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'es', label: 'Español', flag: '🇪🇸' },
   { code: 'pt', label: 'Português', flag: '🇵🇹' },
   { code: 'fr', label: 'Français', flag: '🇫🇷' },
   { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'ja', label: '日本語', flag: '🇯🇵' }
 ];
 
 export default function LanguageSwitcher() {

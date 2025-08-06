@@ -1,0 +1,41 @@
+{
+  "faq_title": "Foire aux questions",
+  "faq_items": [
+    {
+      "q": "Que puis-je faire avec cette application ?",
+      "a": "Vous pouvez enregistrer votre service de tennis en vidéo, et l’IA analysera automatiquement votre technique, vous attribuera une note et vous donnera un conseil personnalisé. Vous pouvez également partager facilement votre fiche de score sur les réseaux sociaux. La version premium offre des conseils d’IA plus détaillés."
+    },
+    {
+      "q": "Quel type de vidéo convient le mieux à l’analyse par l’IA ?",
+      "a": "Nous recommandons une vidéo qui montre clairement l’ensemble de votre corps lors du service. Placez la caméra en diagonale derrière la ligne de service pour de meilleurs résultats."
+    },
+    {
+      "q": "Combien de services puis-je analyser ?",
+      "a": "Les utilisateurs gratuits peuvent analyser jusqu’à 3 services par jour. Les membres premium peuvent analyser autant de services qu’ils le souhaitent, sans limite quotidienne."
+    },
+    {
+      "q": "Quelles sont les différences entre les versions gratuite et premium ?",
+      "a": "La version gratuite affiche des publicités et limite le nombre d’analyses par jour. La version premium supprime les publicités, permet des analyses illimitées, débloque des skins premium et fournit des conseils d’IA détaillés."
+    },
+    {
+      "q": "Combien coûte le plan premium et comment payer ?",
+      "a": "Le plan premium coûte 2 € par mois (ou 19 € par an à tarif réduit). Le paiement se fait par abonnement via l’App Store ou Google Play."
+    },
+    {
+      "q": "Que faire si les conseils de l’IA ou les scores ne s’affichent pas ?",
+      "a": "Si l’affichage des conseils ou des scores est retardé, cela peut être dû aux conditions réseau ou à la charge du serveur. Si le redémarrage de l’application ne résout pas le problème, veuillez contacter le support."
+    },
+    {
+      "q": "Où sont enregistrées les vidéos téléchargées et les résultats d’analyse ?",
+      "a": "Les vidéos téléchargées et les résultats d’analyse ne sont pas enregistrés. Ils sont automatiquement supprimés."
+    },
+    {
+      "q": "Comment partager les résultats de l’analyse avec des amis ou des entraîneurs ?",
+      "a": "Vous pouvez facilement partager les résultats en utilisant le bouton 'Partager' sur l’écran des résultats via les réseaux sociaux, email, LINE, etc. Vous pouvez également sauvegarder l’image de la fiche de score sur votre appareil et la partager."
+    },
+    {
+      "q": "Que faire si l’application ne fonctionne pas correctement ou si je trouve un bug ?",
+      "a": "Veuillez nous contacter depuis l’écran 'Paramètres' ou via le formulaire de contact sur la page d’aide. Nous vous répondrons rapidement."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "faq_title": "Preguntas frecuentes",
+  "faq_items": [
+    {
+      "q": "¿Qué puedo hacer con esta aplicación?",
+      "a": "Puedes grabar tu servicio de tenis en video, y la IA analizará automáticamente tu forma, la calificará y te dará un consejo puntual. También puedes compartir fácilmente tu tarjeta de puntuación en redes sociales. La versión premium ofrece consejos de IA más detallados."
+    },
+    {
+      "q": "¿Qué tipo de video funciona mejor para el análisis de IA?",
+      "a": "Recomendamos un video que muestre claramente todo tu cuerpo mientras sirves solo. Coloca la cámara en diagonal detrás de la línea de servicio para obtener los mejores resultados."
+    },
+    {
+      "q": "¿Cuántos servicios puedo analizar?",
+      "a": "Los usuarios gratuitos pueden analizar hasta 3 servicios por día. Los miembros premium pueden analizar tantos servicios como quieran, sin límite diario."
+    },
+    {
+      "q": "¿Cuáles son las diferencias entre la versión gratuita y la versión premium?",
+      "a": "La versión gratuita muestra anuncios y tiene un límite diario de análisis. La versión premium elimina los anuncios, permite análisis ilimitados, desbloquea skins premium y ofrece consejos de IA detallados."
+    },
+    {
+      "q": "¿Cuánto cuesta el plan premium y cómo pago?",
+      "a": "El plan premium cuesta 2 € al mes (o 18 € al año con descuento). El pago se realiza mediante suscripción a través de la App Store o Google Play."
+    },
+    {
+      "q": "¿Qué hago si los consejos de IA o las puntuaciones no se muestran?",
+      "a": "Si hay un retraso en mostrar los consejos o las puntuaciones, puede deberse a las condiciones de la red o la carga del servidor. Si reiniciar la aplicación no ayuda, por favor contacta con soporte."
+    },
+    {
+      "q": "¿Dónde se guardan los videos subidos y los resultados del análisis?",
+      "a": "Los videos subidos y los resultados del análisis no se guardan. Se eliminan automáticamente."
+    },
+    {
+      "q": "¿Cómo puedo compartir los resultados del análisis con amigos o entrenadores?",
+      "a": "Puedes compartir fácilmente los resultados usando el botón 'Compartir' en la pantalla de resultados a través de redes sociales, correo electrónico, LINE, etc. También puedes guardar la imagen de la tarjeta de puntuación en tu dispositivo y compartirla."
+    },
+    {
+      "q": "¿Qué hago si la aplicación no funciona correctamente o encuentro un error?",
+      "a": "Por favor contáctanos desde la pantalla de 'Configuración' o el formulario de contacto en la página de ayuda. Responderemos rápidamente."
+    }
+  ]
+}
