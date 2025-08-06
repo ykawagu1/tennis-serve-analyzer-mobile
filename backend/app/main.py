@@ -183,11 +183,14 @@ def analyze_video():
         # (9) アドバイス生成パート（セキュア/有料プランのみAIアドバイス）
         is_premium = request.form.get("is_premium", "false").lower() == "true"
         user_concerns = request.form.get("user_concerns", "")
-
+        language = request.form.get('language', 'ja')  # デフォルトは日本語
+            # ここで language をログに出したり
+        print(f"ユーザー選択言語: {language}")
         advice_generator = AdviceGenerator()  # ←APIキーはインスタンス生成時に環境変数から取得
         advice = advice_generator.generate_advice(
             analysis_data=analysis_result,
             user_concerns=user_concerns,
+            language=language, 
             user_level="intermediate",
             use_chatgpt=is_premium,
             # api_keyは一切渡さない！（環境変数のみで運用）

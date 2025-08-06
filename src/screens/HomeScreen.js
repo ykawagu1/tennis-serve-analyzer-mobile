@@ -30,8 +30,8 @@ const HomeScreen = ({ navigation }) => {
   const [showShootingGuide, setShowShootingGuide] = useState(false);
   const [usageCount, setUsageCount] = useState(0);
 
-  const { t } = useTranslation();
-
+  const { t , i18n} = useTranslation();
+  const currentLang = i18n.language;
   // ナビゲーションヘッダーにロゴを設定
   useFocusEffect(
     useCallback(() => {
@@ -187,7 +187,7 @@ const HomeScreen = ({ navigation }) => {
         formData.append('user_concerns', userConcerns);
       }
       formData.append('is_premium', isPremium ? 'true' : 'false');
-
+      formData.append('language', currentLang); // ←ここを追加
       const response = await axios.post(`${API_BASE_URL}/api/analyze`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (progressEvent) => {

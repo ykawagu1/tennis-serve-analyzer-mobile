@@ -6,10 +6,6 @@ logger = logging.getLogger(__name__)
 
 class AdviceGenerator:
     def __init__(self):
-        """
-        アドバイス生成器の初期化
-        APIキーは環境変数 OPENAI_API_KEY のみ参照
-        """
         self.api_key = os.environ.get("OPENAI_API_KEY", "")
         self.client = None
         if self.api_key:
@@ -36,21 +32,17 @@ class AdviceGenerator:
         user_level: str = 'intermediate',
         focus_areas: List = None,
         use_chatgpt: Optional[bool] = False,
-        user_concerns: str = ''
+        user_concerns: str = '',
+        language: str = 'ja'
     ) -> Dict:
-        """
-        解析データに基づいてアドバイスを生成
-        use_chatgpt: TrueのときのみAIアドバイスを生成（APIキーはサーバー環境変数のみ使用）
-        """
         logger.info(f"アドバイス生成開始 - ChatGPT使用: {use_chatgpt}, 気になること: {bool(user_concerns)}")
         basic_advice = self._generate_basic_advice(analysis_data)
 
-        # 有料（サブスク）プランだけAI詳細アドバイスを生成
         if use_chatgpt and self.api_key:
             try:
                 logger.info("ChatGPT詳細アドバイス生成開始")
                 enhanced_advice = self._generate_enhanced_advice(
-                    analysis_data, basic_advice, user_concerns)
+                    analysis_data, basic_advice, user_concerns, language=language)
                 logger.info(f"ChatGPT詳細アドバイス生成完了 - Enhanced: {enhanced_advice.get('enhanced', False)}")
                 return enhanced_advice
             except Exception as e:
@@ -61,7 +53,6 @@ class AdviceGenerator:
                     basic_advice['one_point_advice'] = self._generate_basic_one_point_advice(user_concerns)
                 return basic_advice
         else:
-            # 無料プランは通常アドバイスのみ
             logger.info("無料枠なので詳細アドバイスは生成されません")
             if user_concerns:
                 basic_advice['one_point_advice'] = self._generate_basic_one_point_advice(user_concerns)
@@ -69,7 +60,6 @@ class AdviceGenerator:
             return basic_advice
 
     def _generate_basic_advice(self, analysis_data: Dict) -> Dict:
-        """基本的なアドバイスを生成"""
         total_score = (
             analysis_data.get('total_score')
             or analysis_data.get('tiered_evaluation', {}).get('total_score')
@@ -78,7 +68,6 @@ class AdviceGenerator:
         )
         phase_analysis = analysis_data.get('phase_analysis', {})
 
-        # 総合評価
         if total_score >= 8:
             overall = "Excellent service form! With minor adjustments, you can improve even further."
         elif total_score >= 6:
@@ -96,9 +85,9 @@ class AdviceGenerator:
             if score < 7:
                 if phase in ["準備", "preparation"]:
                     technical_points.append("Improve the stability of your stance (foot positioning).")
-                    practice_suggestions.append("壁Practice shadow swings with the correct stance against a wall.")
+                    practice_suggestions.append("Practice shadow swings with the correct stance against a wall.")
                 elif phase in ["トスアップ", "ball_toss"]:
-                    technical_points.append("トImprove the consistency of your toss height and position.")
+                    technical_points.append("Improve the consistency of your toss height and position.")
                     practice_suggestions.append("Repeat tossing the ball to the same height for consistency.")
                 elif phase in ["バックスイング", "backswing"]:
                     technical_points.append("Adjust your racket takeback and timing.")
@@ -108,33 +97,30 @@ class AdviceGenerator:
                     practice_suggestions.append("Gradually increase swing speed during practice swings.")
                 elif phase in ["インパクト", "contact"]:
                     technical_points.append("Improve your contact point with the ball.")
-                    practice_suggestions.append("ネPractice checking the contact point in front of the net.")
+                    practice_suggestions.append("Practice checking the contact point in front of the net.")
                 elif phase in ["フォロースルー", "follow_through"]:
                     technical_points.append("Stabilize your finish (follow-through) position.")
                     practice_suggestions.append("Focus on the follow-through in slow-motion practice swings.")
 
-        result = {
+        return {
             "basic_advice": overall,
             "technical_points": technical_points,
             "practice_suggestions": practice_suggestions,
             "enhanced": False
         }
-        return result
 
-    def _generate_enhanced_advice(self, analysis_data: Dict, basic_advice: Dict, user_concerns: str = '') -> Dict:
-        """ChatGPT APIを使用して詳細なアドバイスを生成"""
+    def _generate_enhanced_advice(self, analysis_data: Dict, basic_advice: Dict, user_concerns: str = '', language: str = 'ja') -> Dict:
         total_score = analysis_data.get('total_score', 0)
         phase_analysis = analysis_data.get('phase_analysis', {})
 
-        # 詳細プロンプト作成
-        prompt = self._create_detailed_prompt(total_score, phase_analysis, basic_advice, user_concerns)
-        ai_response = self._call_chatgpt_api(prompt)
+        prompt = self._create_detailed_prompt(total_score, phase_analysis, basic_advice, user_concerns, language=language)
+        ai_response = self._call_chatgpt_api(prompt, language=language)
         if ai_response:
             logger.info("ChatGPT API呼び出し成功")
             enhanced_advice = self._parse_ai_response(ai_response, basic_advice)
             enhanced_advice["enhanced"] = True
             enhanced_advice["detailed_advice"] = ai_response
-            enhanced_advice["enhanced_advice"] = ai_response   # UIで分かりやすく
+            enhanced_advice["enhanced_advice"] = ai_response
             if user_concerns:
                 enhanced_advice["one_point_advice"] = self._extract_one_point_advice(ai_response, user_concerns)
             return enhanced_advice
@@ -144,52 +130,36 @@ class AdviceGenerator:
             basic_advice["error"] = "ChatGPT APIからの応答が空でした"
             return basic_advice
 
-    def _call_chatgpt_api(self, prompt: str) -> str:
-        """ChatGPT APIを呼び出し（APIキーはサーバー内のみ保持）"""
-        try:
-            if self.client:
-                logger.info("OpenAI v1.0+ APIを使用")
-                response = self.client.chat.completions.create(
-                    model="gpt-4.1-nano",
-                    messages=[
-                        {"role": "system", "content": """あなたは30年以上の経験を持つATP/WTAツアーのプロテニスコーチです。下記「ユーザーの具体的な悩み」に、必ず明確かつ具体的に答えてください。""" },
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=5000,
-                    temperature=0.7
-                )
-                return response.choices[0].message.content
-            else:
-                logger.info("OpenAI v0.x APIを使用")
-                import openai
-                response = openai.ChatCompletion.create(
-                    model="gpt-4.1-nano",
-                    messages=[
-                        {"role": "system", "content": """あなたは30年以上の経験を持つATP/WTAツアーのプロテニスコーチです。下記「ユーザーの具体的な悩み」に、必ず明確かつ具体的に答えてください。""" },
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=5000,
-                    temperature=0.7
-                )
-                return response.choices[0].message.content
-        except Exception as e:
-            logger.error(f"ChatGPT API呼び出しエラー: {e}")
-            return None
-
-    def _create_detailed_prompt(self, total_score: float, phase_analysis: Dict, basic_advice: Dict, user_concerns: str = '') -> str:
-        """詳細なプロンプトを作成（user_concerns対応）"""
+    def _create_detailed_prompt(
+        self, total_score: float, phase_analysis: Dict, basic_advice: Dict, user_concerns: str = '', language: str = 'ja'
+    ) -> str:
         phase_scores = []
         weak_phases = []
         for phase, data in phase_analysis.items():
             score = data.get('score', 0) if isinstance(data, dict) else 0
-            phase_scores.append(f"{phase}: {score:.1f}点")
+            phase_scores.append(f"{phase}: {score:.1f}")
             if score < 7:
                 weak_phases.append(phase)
+
+        # ここで concerns_text を**多言語分岐で生成**
         concerns_text = ""
         if user_concerns:
-            concerns_text = f"\n\n【ユーザーの具体的な悩み】\n{user_concerns}\n\n上記の悩みに特に焦点を当てて、具体的で実践的なアドバイスを含めてください。"
-        prompt = f"""
-【テニスサーブ動作解析結果】
+            if language == "ja":
+                concerns_text = f"\n\n【ユーザーの具体的な悩み】\n{user_concerns}\n\n上記の悩みに特に焦点を当てて、具体的で実践的なアドバイスを含めてください。"
+            elif language == "en":
+                concerns_text = f"\n\n[User's specific concern(s)]\n{user_concerns}\n\nFocus on the above concern(s) and include concrete, practical advice."
+            elif language == "es":
+                concerns_text = f"\n\n[Inquietud(es) específica(s) del usuario]\n{user_concerns}\n\nEnfócate en la(s) inquietud(es) mencionada(s) e incluye consejos concretos y prácticos."
+            elif language == "pt":
+                concerns_text = f"\n\n[Preocupação(ões) específica(s) do usuário]\n{user_concerns}\n\nFoque nas preocupações acima e inclua conselhos concretos e práticos."
+            elif language == "fr":
+                concerns_text = f"\n\n[Préoccupation(s) spécifique(s) de l'utilisateur]\n{user_concerns}\n\nConcentrez-vous sur les préoccupations ci-dessus et incluez des conseils concrets et pratiques."
+            elif language == "fr":
+                concerns_text = f"\n\n[Préoccupation(s) spécifique(s) de l'utilisateur]\n{user_concerns}\n\nConcentrez-vous sur les préoccupations ci-dessus et incluez des conseils concrets et pratiques."# 他言語もここで増やす
+            elif language == "de":
+                concerns_text = f"\n\n[Spezifische(r) Benutzeranliegen]\n{user_concerns}\n\nKonzentrieren Sie sich auf das/die oben genannte(n) Anliegen und geben Sie konkrete, praktische Ratschläge."
+        if language == "ja":
+            prompt = f"""【テニスサーブ動作解析結果】
 
 総合スコア: {total_score:.1f}/10点
 
@@ -216,17 +186,163 @@ class AdviceGenerator:
 ・悩みが曖昧でも「考えられる理由」と「改善案」を必ず入れること。
 ・直接、テニスに関係ない悩みにも、共感と改善案を必ず入れること。
 """
+        elif language == "en":
+            prompt = f"""[Tennis Serve Analysis Result]
+
+Overall score: {total_score:.1f}/10
+
+Phase-by-phase scores:
+{chr(10).join(phase_scores)}
+
+Phases needing improvement: {', '.join(weak_phases) if weak_phases else 'None'}
+
+Key technical points:
+{chr(10).join(f"- {point}" for point in basic_advice.get('technical_points', []))}
+{concerns_text}
+
+Based on this analysis, please generate a detailed and actionable coaching report with the following structure (do **not** write any length restrictions):
+1. Detailed analysis of form improvements
+2. 4-week training program
+3. Physical strengthening plan
+4. Key points for match play
+5. One-point advice
+
+Focus especially on the phases needing improvement ({', '.join(weak_phases)}) and ensure all advice is specific and practical for the user's level and concern(s).
+
+[Coaching requirements]
+- Address the user's concern(s) directly in each section.
+- Even if the concern is vague, include likely reasons and practical solutions.
+- If the concern is not tennis-related, include empathy and advice for that topic as well.
+"""
+        elif language == "es":
+            prompt = f"""
+[Tennis Serve Analysis Result]
+
+Puntuación total: {total_score:.1f}/10
+
+Puntuación por fases:
+{chr(10).join(phase_scores)}
+
+Fases que requieren mejora: {', '.join(weak_phases) if weak_phases else 'Ninguna'}
+
+Puntos técnicos clave:
+{chr(10).join(f"- {point}" for point in basic_advice.get('technical_points', []))}
+{concerns_text}
+
+Con base en este análisis, genera un informe detallado de coaching siguiendo esta estructura (no escribas restricciones de longitud):
+1. Análisis detallado de las mejoras de técnica
+2. Programa de entrenamiento de 4 semanas
+3. Plan de fortalecimiento físico
+4. Puntos clave para partidos
+5. Consejo de un solo punto
+
+Enfócate especialmente en las fases que requieren mejora ({', '.join(weak_phases)}) y asegúrate de que todo el consejo sea específico y práctico para el nivel y las inquietudes del usuario.
+
+[Requisitos de coaching]
+- Aborda directamente las inquietudes del usuario en cada sección.
+- Incluso si la inquietud es vaga, incluye posibles razones y soluciones prácticas.
+- Si la inquietud no está relacionada con el tenis, incluye empatía y consejos también para ese tema.
+"""
+        elif language == "pt":
+            prompt = f"""
+[Resultado da Análise do Saque de Tênis]
+
+Pontuação geral: {total_score:.1f}/10
+
+Pontuações por fase:
+{chr(10).join(phase_scores)}
+
+Fases que precisam de melhoria: {', '.join(weak_phases) if weak_phases else 'Nenhuma'}
+
+Pontos técnicos principais:
+{chr(10).join(f"- {point}" for point in basic_advice.get('technical_points', []))}
+{concerns_text}
+
+Com base nesta análise, gere um relatório detalhado de coaching com a seguinte estrutura (não escreva restrições de tamanho):
+1. Análise detalhada dos pontos de melhoria da técnica
+2. Programa de treinamento de 4 semanas
+3. Plano de fortalecimento físico
+4. Pontos principais para jogos
+5. Dica pontual
+
+Dê especial atenção às fases que precisam de melhoria ({', '.join(weak_phases)}) e garanta que todos os conselhos sejam específicos e práticos para o nível e as preocupações do usuário.
+
+[Requisitos de coaching]
+- Aborde diretamente as preocupações do usuário em cada seção.
+- Mesmo que a preocupação seja vaga, inclua possíveis razões e soluções práticas.
+- Se a preocupação não for relacionada ao tênis, inclua empatia e conselhos também para esse tema.
+"""
+        elif language == "fr":
+            prompt = f"""
+[Résultat de l'analyse du service de tennis]
+
+Score global : {total_score:.1f}/10
+
+Scores par phase :
+{chr(10).join(phase_scores)}
+
+Phases nécessitant des améliorations : {', '.join(weak_phases) if weak_phases else 'Aucune'}
+
+Points techniques clés :
+{chr(10).join(f"- {point}" for point in basic_advice.get('technical_points', []))}
+{concerns_text}
+
+Sur la base de cette analyse, veuillez générer un rapport d'entraînement détaillé avec la structure suivante (n'indiquez aucune restriction de longueur) :
+1. Analyse détaillée des axes d'amélioration de la technique
+2. Programme d'entraînement sur 4 semaines
+3. Plan de renforcement physique
+4. Points clés pour les matchs
+5. Conseil unique
+
+Mettez particulièrement l'accent sur les phases nécessitant des améliorations ({', '.join(weak_phases)}) et assurez-vous que tous les conseils soient spécifiques et pratiques pour le niveau et les préoccupations de l'utilisateur.
+
+[Exigences de coaching]
+- Traitez directement les préoccupations de l'utilisateur dans chaque section.
+- Même si la préoccupation est vague, incluez des raisons possibles et des solutions pratiques.
+- Si la préoccupation n'est pas liée au tennis, incluez également de l'empathie et des conseils pour ce sujet.
+"""
+        elif language == "de":
+            prompt = f"""
+[Ergebnis der Tennis-Aufschlag-Analyse]
+
+Gesamtpunktzahl: {total_score:.1f}/10
+
+Punkte nach Phasen:
+{chr(10).join(phase_scores)}
+
+Phasen, die verbessert werden müssen: {', '.join(weak_phases) if weak_phases else 'Keine'}
+
+Wichtige technische Punkte:
+{chr(10).join(f"- {point}" for point in basic_advice.get('technical_points', []))}
+{concerns_text}
+
+Basierend auf dieser Analyse erstellen Sie bitte einen detaillierten und umsetzbaren Coaching-Bericht mit folgender Struktur (geben Sie keine Längenbeschränkungen an):
+1. Detaillierte Analyse der Verbesserungsmöglichkeiten der Technik
+2. 4-Wochen-Trainingsprogramm
+3. Plan zur körperlichen Stärkung
+4. Wichtige Punkte für Matches
+5. Ein-Punkt-Ratschlag
+
+Konzentrieren Sie sich besonders auf die Phasen, die verbessert werden müssen ({', '.join(weak_phases)}), und stellen Sie sicher, dass alle Ratschläge spezifisch und praktisch für das Niveau und die Anliegen des Nutzers sind.
+
+[Coaching-Anforderungen]
+- Gehen Sie in jedem Abschnitt direkt auf die Anliegen des Nutzers ein.
+- Auch wenn das Anliegen vage ist, geben Sie wahrscheinliche Gründe und praktische Lösungen an.
+- Ist das Anliegen nicht tennisbezogen, geben Sie auch dafür Empathie und Ratschläge.
+"""
+ 
+        # 他言語も elif で続けて書けばOK
+        else:
+            prompt = "(多言語分岐を書く)"
         return prompt
 
     def _parse_ai_response(self, ai_response: str, basic_advice: Dict) -> Dict:
-        """AI応答を解析してアドバイスデータに変換"""
         enhanced_advice = basic_advice.copy()
         enhanced_advice["detailed_advice"] = ai_response
         enhanced_advice["enhanced"] = True
         return enhanced_advice
 
     def _extract_one_point_advice(self, ai_response: str, user_concerns: str) -> str:
-        """AI応答からワンポイントアドバイスを抽出"""
         lines = ai_response.split('\n')
         one_point_section = False
         one_point_advice = []
@@ -244,7 +360,6 @@ class AdviceGenerator:
             return self._generate_basic_one_point_advice(user_concerns)
 
     def _generate_basic_one_point_advice(self, user_concerns: str) -> str:
-        """user_concernsに基づく基本的なワンポイントアドバイス"""
         concerns_lower = user_concerns.lower()
         if 'トス' in user_concerns or 'toss' in concerns_lower:
             return "トスの安定性向上のため、毎日10回、同じ高さ・同じ位置にトスを上げる練習を行いましょう。"
@@ -257,8 +372,47 @@ class AdviceGenerator:
         else:
             return "まずは基本的なサーブフォームの確認から始め、一つずつ改善点を意識して練習しましょう。"
 
+    def _call_chatgpt_api(self, prompt: str, language: str = 'ja') -> Optional[str]:
+        try:
+            if language == "ja":
+                system_content = "あなたは30年以上の経験を持つATP/WTAツアーのプロテニスコーチです。下記「ユーザーの具体的な悩み」に必ず明確かつ具体的に答えてください。"
+            elif language == "en":
+                system_content = "You are a professional tennis coach with over 30 years of ATP/WTA tour experience. Always respond clearly and concretely to the user's specific concerns below."
+            elif language == "es":
+                system_content = "Eres un entrenador profesional de tenis con más de 30 años de experiencia en el circuito ATP/WTA. Responde siempre de forma clara y concreta a las inquietudes específicas del usuario a continuación."
+            else:
+                system_content = "You are a highly experienced tennis coach. Always respond clearly and concretely to the user's concerns."
+
+            if self.client:
+                logger.info("OpenAI v1.0+ APIを使用")
+                response = self.client.chat.completions.create(
+                    model="gpt-4.1-nano",
+                    messages=[
+                        {"role": "system", "content": system_content},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=3000,
+                    temperature=0.7
+                )
+                return response.choices[0].message.content
+            else:
+                logger.info("OpenAI v0.x APIを使用")
+                import openai
+                response = openai.ChatCompletion.create(
+                    model="gpt-4.1-nano",
+                    messages=[
+                        {"role": "system", "content": system_content},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_tokens=3000,
+                    temperature=0.7
+                )
+                return response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"ChatGPT API呼び出しエラー: {e}")
+            return None
+
     def _generate_fallback_advice(self) -> Dict:
-        """エラー時のフォールバックアドバイス"""
         return {
             "basic_advice": "サーブフォームの基本を確認し、段階的に改善していきましょう。",
             "technical_points": [
