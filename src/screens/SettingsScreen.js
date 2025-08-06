@@ -7,10 +7,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Application from 'expo-application';
 import * as Device from 'expo-device';
 import Toast from 'react-native-toast-message';
+import { useTranslation } from 'react-i18next'; // ★ここを追加
 import apiService from '../services/apiService';
 import { useSkin, SKINS } from '../SkinContext';
 
 const SettingsScreen = ({ navigation }) => {
+  const { t } = useTranslation(); // ★ここを追加
   const { skinKey, setSkinKey, isPremium, setIsPremium } = useSkin();
   const [enableNotifications, setEnableNotifications] = useState(true);
   const [serverStatus, setServerStatus] = useState('checking');
@@ -29,7 +31,7 @@ const SettingsScreen = ({ navigation }) => {
       const savedSkin = await AsyncStorage.getItem('selectedSkin');
       if (savedSkin) setSkinKey(savedSkin);
     } catch (error) {
-      console.error('設定の読み込みエラー:', error);
+      console.error('Error loading settings:', error);
     }
   };
 
@@ -39,14 +41,14 @@ const SettingsScreen = ({ navigation }) => {
       await AsyncStorage.setItem('selectedSkin', skinKey);
       Toast.show({
         type: 'success',
-        text1: '設定を保存しました',
-        text2: '変更が適用されました',
+        text1: t('settings_saved'),
+        text2: t('settings_applied'),
       });
     } catch (error) {
       Toast.show({
         type: 'error',
-        text1: '設定の保存に失敗しました',
-        text2: 'もう一度お試しください',
+        text1: t('settings_save_failed'),
+        text2: t('settings_try_again'),
       });
     }
   };
@@ -76,12 +78,12 @@ const SettingsScreen = ({ navigation }) => {
 
   const resetSettings = () => {
     Alert.alert(
-      '設定のリセット',
-      'すべての設定を初期値に戻しますか？',
+      t('settings_reset_title'),
+      t('settings_reset_message'),
       [
-        { text: 'キャンセル', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'リセット',
+          text: t('reset'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -91,14 +93,14 @@ const SettingsScreen = ({ navigation }) => {
               setIsPremium(false);
               Toast.show({
                 type: 'success',
-                text1: '設定をリセットしました',
-                text2: '初期値に戻りました',
+                text1: t('settings_reset_done'),
+                text2: t('settings_reset_restored'),
               });
             } catch {
               Toast.show({
                 type: 'error',
-                text1: 'リセットに失敗しました',
-                text2: 'もう一度お試しください',
+                text1: t('settings_reset_failed'),
+                text2: t('settings_try_again'),
               });
             }
           },
@@ -117,9 +119,9 @@ const SettingsScreen = ({ navigation }) => {
 
   const getServerStatusText = () => {
     switch (serverStatus) {
-      case 'online': return 'オンライン';
-      case 'offline': return 'オフライン';
-      default: return '確認中...';
+      case 'online': return t('settings_server_online');
+      case 'offline': return t('settings_server_offline');
+      default: return t('settings_server_checking');
     }
   };
 
@@ -131,7 +133,7 @@ const SettingsScreen = ({ navigation }) => {
         <Card style={styles.card}>
           <Card.Content>
             <View style={styles.serverStatus}>
-              <Text style={styles.cardTitle}>サーバー状態</Text>
+              <Text style={styles.cardTitle}>{t('settings_server_status')}</Text>
               <View style={styles.statusContainer}>
                 <View style={[styles.statusDot, { backgroundColor: getServerStatusColor() }]} />
                 <Text style={styles.statusText}>{getServerStatusText()}</Text>
@@ -144,11 +146,11 @@ const SettingsScreen = ({ navigation }) => {
         {/* プレミアム切替 */}
         <Card style={styles.card}>
           <Card.Content>
-            <Text style={styles.cardTitle}>モード切替</Text>
+            <Text style={styles.cardTitle}>{t('settings_mode_switch')}</Text>
             <Divider style={styles.divider} />
             <View style={styles.settingItem}>
               <Text style={styles.settingLabel}>
-                {isPremium ? 'プレミアムモード（全機能解放）' : '無料モード'}
+                {isPremium ? t('settings_premium_mode') : t('settings_free_mode')}
               </Text>
               <Switch
                 value={isPremium}
@@ -159,23 +161,22 @@ const SettingsScreen = ({ navigation }) => {
             </View>
             {!isPremium && (
               <Text style={{ color: '#888', marginTop: 8, fontSize: 13 }}>
-                プレミアムで全スキンや詳細アドバイスが解放されます
+                {t('settings_premium_hint')}
               </Text>
             )}
           </Card.Content>
         </Card>
 
-                {/* スキン切替 */}
+        {/* スキン切替 */}
         <Card style={styles.card}>
           <Card.Content>
             <Text style={styles.cardTitle}>
-              スキン選択（{isPremium ? 'プレミアム' : '無料'}枠）
+              {t('settings_skin_select', { mode: isPremium ? t('settings_premium') : t('settings_free') })}
             </Text>
             <Divider style={styles.divider} />
             {SKINS.map(option => {
               const disabled = option.premiumOnly && !isPremium;
               const isSelected = skinKey === option.key;
-
               return (
                 <View key={option.key} style={styles.skinRadioItem}>
                   <RadioButton
@@ -184,8 +185,8 @@ const SettingsScreen = ({ navigation }) => {
                       if (disabled) {
                         Toast.show({
                           type: 'info',
-                          text1: 'プレミアム限定スキン',
-                          text2: 'プレミアム版にするとこのスキンも使用できます',
+                          text1: t('settings_skin_premium_only'),
+                          text2: t('settings_skin_premium_info'),
                         });
                       } else {
                         setSkinKey(option.key);
@@ -200,10 +201,10 @@ const SettingsScreen = ({ navigation }) => {
                       disabled && { color: '#aaa' },
                     ]}
                   >
-                    {option.name}
+                    {t(option.nameKey)}
                     {option.premiumOnly && (
                       <Text style={{ color: disabled ? '#bbb' : '#e53935', fontSize: 13 }}>
-                        （プレミアム限定）
+                        {t('settings_premium_only')}
                       </Text>
                     )}
                   </Text>
@@ -216,10 +217,10 @@ const SettingsScreen = ({ navigation }) => {
         {/* 通知設定 */}
         <Card style={styles.card}>
           <Card.Content>
-            <Text style={styles.cardTitle}>アプリ設定</Text>
+            <Text style={styles.cardTitle}>{t('settings_app')}</Text>
             <Divider style={styles.divider} />
             <View style={styles.settingItem}>
-              <Text style={styles.settingLabel}>通知を有効にする</Text>
+              <Text style={styles.settingLabel}>{t('settings_enable_notifications')}</Text>
               <Switch
                 value={enableNotifications}
                 onValueChange={setEnableNotifications}
@@ -240,36 +241,36 @@ const SettingsScreen = ({ navigation }) => {
             labelStyle={{ fontSize: 16 }}
             contentStyle={{ flexDirection: 'row-reverse' }}
           >
-            よくある質問（FAQ）はこちら
+            {t('settings_faq_btn')}
           </Button>
           <View style={{ height: 12 }} />
           <Text style={styles.faqNote}>
-            アプリの使い方やよくある質問をまとめています。困ったときはこちらをご覧ください。
+            {t('settings_faq_note')}
           </Text>
         </View>
 
         {/* アプリ情報 */}
         <Card style={styles.card}>
           <Card.Content>
-            <Text style={styles.cardTitle}>アプリ情報</Text>
+            <Text style={styles.cardTitle}>{t('settings_app_info')}</Text>
             <Divider style={styles.divider} />
             <List.Item
-              title="アプリ名"
+              title={t('settings_app_name')}
               description={appInfo.appName}
               left={props => <List.Icon {...props} icon="application" />}
             />
             <List.Item
-              title="バージョン"
+              title={t('settings_app_version')}
               description={`${appInfo.appVersion} (${appInfo.buildVersion})`}
               left={props => <List.Icon {...props} icon="information" />}
             />
             <List.Item
-              title="プラットフォーム"
+              title={t('settings_app_platform')}
               description={`${appInfo.platform} ${appInfo.osVersion}`}
               left={props => <List.Icon {...props} icon="cellphone" />}
             />
             <List.Item
-              title="デバイス"
+              title={t('settings_app_device')}
               description={appInfo.deviceName}
               left={props => <List.Icon {...props} icon="devices" />}
             />
@@ -279,10 +280,10 @@ const SettingsScreen = ({ navigation }) => {
         {/* アクション */}
         <View style={styles.buttonContainer}>
           <Button mode="contained" onPress={saveSettings} style={styles.button} icon="content-save">
-            設定を保存
+            {t('settings_save_btn')}
           </Button>
           <Button mode="outlined" onPress={resetSettings} style={styles.button} icon="restore">
-            設定をリセット
+            {t('settings_reset_btn')}
           </Button>
         </View>
 

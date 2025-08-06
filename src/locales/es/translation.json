@@ -37,5 +37,48 @@
       "q": "¿Qué hago si la aplicación no funciona correctamente o encuentro un error?",
       "a": "Por favor contáctanos desde la pantalla de 'Configuración' o el formulario de contacto en la página de ayuda. Responderemos rápidamente."
     }
-  ]
+  ],
+  "home_title": "Analizador de Saque de Tenis",
+  "home_select_video": "Seleccionar un video",
+  "home_select_from_gallery": "Elegir video de la galería",
+  "home_take_photo": "Grabar con la cámara",
+  "home_start_analysis": "Iniciar análisis",
+  "home_reset": "Restablecer",
+  "home_ready": "Listo para analizar",
+  "home_selected_file": "Archivo seleccionado:",
+  "home_input_concern_label": "Describe tus dudas aquí (opcional)",
+  "home_premium_label": "Premium (Consejos de IA detallados)",
+  "home_free_label": "Modo gratuito (Solo análisis simple)",
+  "home_guide": "Guía de grabación",
+  "home_note": "Formatos compatibles: MP4, AVI, MOV, MKV (Máx 100MB)",
+  "home_free_remaining": "Análisis gratuitos restantes hoy:",
+  "home_analyzing": "Analizando...",
+  "home_invalid_result": "Formato de resultado no válido",
+  "home_error_analyze": "Ocurrió un error durante el análisis. Por favor, inténtalo de nuevo.",
+  "home_error_retry": "Por favor, inténtalo de nuevo",
+  "home_guide_footer": "Para un análisis preciso, siga la guía.",
+
+  "skin_simple": "Sencillo",
+  "skin_genz": "Pop",
+  "skin_earth": "Tierra",
+  "skin_mint": "Menta",
+  "skin_retro": "Retro",
+  "skin_gradient_blue": "Gradiente Azul",
+  "skin_gradient_red": "Gradiente Rojo",
+  "skin_gradient_purple": "Gradiente Púrpura",
+  "skin_gradient_green": "Gradiente Verde",
+  "skin_gradient_sunset": "Gradiente Atardecer",
+  "skin_gradient_rainbow": "Gradiente Arcoíris",
+  "skin_gradient_neon": "Neón Pulsante",
+  "skin_gradient_strobe": "Neón Estroboscópico",
+  "skin_gradient_aurora": "Aurora Boreal",
+  "skin_gradient_candy": "Caramelo Pop",
+  
+  "settings_header": "Configuración",
+  "tab_home": "Inicio",
+  "tab_settings": "Configuración",
+  "result_header": "Resultado",
+  "faq_header": "Preguntas Frecuentes (FAQ)"
+
+
 }

@@ -7,20 +7,23 @@ import { Provider as PaperProvider } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import Toast from 'react-native-toast-message';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next'; // 追加
 
 import HomeScreen from './src/screens/HomeScreen';
 import ResultScreen from './src/screens/ResultScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import PermissionManager from './src/components/PermissionManager';
-
 import { SkinProvider, useSkin } from './src/SkinContext';
 import FAQScreen from './src/screens/FAQScreen'; // ← フォルダ構成に合わせて修正
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// メインタブナビゲーター
 const MainTabNavigator = () => {
   const { skin } = useSkin();
+  const { t } = useTranslation(); // 多言語化
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -42,24 +45,27 @@ const MainTabNavigator = () => {
         name="Home"
         component={HomeScreen}
         options={{
-          title: 'Tennis Serve Analyzer',
-          tabBarLabel: 'ホーム',
+          title: t('home_title'),      // 多言語化
+          tabBarLabel: t('tab_home'),  // 多言語化
         }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
         options={{
-          title: '設定',
-          tabBarLabel: '設定',
+          title: t('settings_header'),         // 多言語化
+          tabBarLabel: t('tab_settings'),      // 多言語化
         }}
       />
     </Tab.Navigator>
   );
 };
 
+// メインスタックナビゲーター
 const MainStackNavigator = () => {
   const { skin } = useSkin();
+  const { t } = useTranslation(); // 多言語化
+
   return (
     <Stack.Navigator
       screenOptions={{
@@ -78,18 +84,17 @@ const MainStackNavigator = () => {
         name="Result"
         component={ResultScreen}
         options={{
-          title: '解析結果',
+          title: t('result_header'),      // 多言語化
           headerStyle: { backgroundColor: skin.primary },
           headerTintColor: skin.text === '#f8f8f8' ? '#f8f8f8' : '#fff',
           headerTitleStyle: { fontWeight: 'bold', fontSize: 18 },
         }}
       />
-      {/* ← FAQScreenをStackに追加！ */}
       <Stack.Screen
         name="FAQ"
         component={FAQScreen}
         options={{
-          title: 'よくある質問（FAQ）',
+          title: t('faq_header'),        // 多言語化
           headerStyle: { backgroundColor: skin.primary },
           headerTintColor: skin.text === '#f8f8f8' ? '#f8f8f8' : '#fff',
           headerTitleStyle: { fontWeight: 'bold', fontSize: 18 },

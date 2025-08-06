@@ -37,5 +37,47 @@
       "q": "Was soll ich tun, wenn die App nicht richtig funktioniert oder ich einen Fehler finde?",
       "a": "Bitte kontaktieren Sie uns über den Bildschirm 'Einstellungen' oder das Kontaktformular auf der Hilfeseite. Wir antworten Ihnen umgehend."
     }
-  ]
+  ],
+  "home_title": "Tennis-Aufschlag-Analyzer",
+  "home_select_video": "Video auswählen",
+  "home_select_from_gallery": "Video aus der Galerie wählen",
+  "home_take_photo": "Mit Kamera aufnehmen",
+  "home_start_analysis": "Analyse starten",
+  "home_reset": "Zurücksetzen",
+  "home_ready": "Bereit zur Analyse",
+  "home_selected_file": "Ausgewählte Datei:",
+  "home_input_concern_label": "Beschreiben Sie hier Ihre Anliegen (optional)",
+  "home_premium_label": "Premium (Detaillierte KI-Ratschläge)",
+  "home_free_label": "Kostenloser Modus (Nur einfache Analyse)",
+  "home_guide": "Aufnahmeleitfaden",
+  "home_note": "Unterstützte Formate: MP4, AVI, MOV, MKV (Max 100MB)",
+  "home_free_remaining": "Heute verbleibende kostenlose Analysen:",
+  "home_analyzing": "Wird analysiert...",
+  "home_invalid_result": "Ungültiges Ergebnisformat",
+  "home_error_analyze": "Während der Analyse ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
+  "home_error_retry": "Bitte versuchen Sie es erneut",
+  "home_guide_footer": "Für eine genaue Analyse befolgen Sie bitte den Leitfaden.",
+  
+  "skin_simple": "Einfach",
+  "skin_genz": "Pop",
+  "skin_earth": "Erde",
+  "skin_mint": "Minze",
+  "skin_retro": "Retro",
+  "skin_gradient_blue": "Blaues Farbverlauf",
+  "skin_gradient_red": "Roter Farbverlauf",
+  "skin_gradient_purple": "Lila Farbverlauf",
+  "skin_gradient_green": "Grüner Farbverlauf",
+  "skin_gradient_sunset": "Sonnenuntergangs-Farbverlauf",
+  "skin_gradient_rainbow": "Regenbogen-Farbverlauf",
+  "skin_gradient_neon": "Pulsierendes Neon",
+  "skin_gradient_strobe": "Stroboskop-Neon",
+  "skin_gradient_aurora": "Aurora-Flow",
+  "skin_gradient_candy": "Candy Pop",
+  
+  "settings_header": "Einstellungen",
+  "tab_home": "Startseite",
+  "tab_settings": "Einstellungen",
+  "result_header": "Ergebnis",
+  "faq_header": "FAQ"
+
 }

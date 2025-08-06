@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, SafeAreaView, Alert,
+  View, Text, StyleSheet, ScrollView, SafeAreaView, Alert, Image
 } from 'react-native';
 import { Button, Card, ProgressBar, IconButton, TextInput, Switch } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
@@ -10,11 +10,10 @@ import ImageViewing from 'react-native-image-viewing';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 
 import { useSkin } from '../SkinContext';
 import AnimatedGradientBackground from '../components/AnimatedGradientBackground';
-
-import { Image } from 'react-native';
 
 const API_BASE_URL = 'http://192.168.10.117:5001';
 const FREE_LIMIT = 3;
@@ -30,6 +29,8 @@ const HomeScreen = ({ navigation }) => {
   const [userConcerns, setUserConcerns] = useState('');
   const [showShootingGuide, setShowShootingGuide] = useState(false);
   const [usageCount, setUsageCount] = useState(0);
+
+  const { t } = useTranslation();
 
   // ナビゲーションヘッダーにロゴを設定
   useFocusEffect(
@@ -84,7 +85,7 @@ const HomeScreen = ({ navigation }) => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('権限エラー', '写真ライブラリへのアクセス権限が必要です。');
+        Alert.alert(t('permission_error_title'), t('permission_error_media_library'));
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -96,7 +97,7 @@ const HomeScreen = ({ navigation }) => {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
         if (file.fileSize > 100 * 1024 * 1024) {
-          Alert.alert('エラー', 'ファイルサイズが大きすぎます。100MB以下のファイルを選択してください。');
+          Alert.alert(t('file_size_error_title'), t('file_size_error_message'));
           return;
         }
         setSelectedFile({
@@ -109,13 +110,13 @@ const HomeScreen = ({ navigation }) => {
         setCurrentStep(2);
         Toast.show({
           type: 'success',
-          text1: '動画選択完了',
-          text2: file.fileName || '選択した動画',
+          text1: t('video_selected_success'),
+          text2: file.fileName || t('video_selected'),
         });
       }
     } catch (err) {
       console.error('動画選択エラー:', err);
-      Alert.alert('エラー', '動画選択中にエラーが発生しました。');
+      Alert.alert(t('error_title'), t('video_select_error'));
     }
   };
 
@@ -124,7 +125,7 @@ const HomeScreen = ({ navigation }) => {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('権限エラー', 'カメラへのアクセス権限が必要です。');
+        Alert.alert(t('permission_error_title'), t('permission_error_camera'));
         return;
       }
       const result = await ImagePicker.launchCameraAsync({
@@ -145,13 +146,13 @@ const HomeScreen = ({ navigation }) => {
         setCurrentStep(2);
         Toast.show({
           type: 'success',
-          text1: '動画撮影完了',
-          text2: '解析を開始できます',
+          text1: t('video_capture_success'),
+          text2: t('ready_to_analyze'),
         });
       }
     } catch (err) {
       console.error('カメラエラー:', err);
-      Alert.alert('エラー', '動画撮影中にエラーが発生しました。');
+      Alert.alert(t('error_title'), t('camera_capture_error'));
     }
   };
 
@@ -168,9 +169,7 @@ const HomeScreen = ({ navigation }) => {
       await AsyncStorage.setItem('usageCount', '0');
     }
     if (!isPremium && count >= FREE_LIMIT) {
-      setError(
-        '無料枠の1日あたりの解析回数（3回）に達しました。\nプレミアムプラン（解析回数無制限、広告表示無し、AIによる詳細アドバイス表示！）を御検討ください。'
-      );
+      setError(t('analyze_limit_error'));
       return;
     }
 
@@ -200,7 +199,7 @@ const HomeScreen = ({ navigation }) => {
       if (response.data && response.data.success && response.data.result) {
         setAnalysisResult(response.data.result);
         setCurrentStep(3);
-        Toast.show({ type: 'success', text1: '解析完了', text2: '結果を確認してください' });
+        Toast.show({ type: 'success', text1: t('analyze_done'), text2: t('check_result') });
         navigation.navigate('Result', {
           analysisResult: response.data.result,
         });
@@ -209,15 +208,15 @@ const HomeScreen = ({ navigation }) => {
           setUsageCount(count + 1);
         }
       } else {
-        setError('解析結果の形式が正しくありません');
+        setError(t('invalid_result_format'));
       }
     } catch (err) {
       console.error('解析エラー:', err);
-      setError('解析中にエラーが発生しました。もう一度お試しください。');
+      setError(t('analyze_error'));
       Toast.show({
         type: 'error',
-        text1: '解析エラー',
-        text2: 'もう一度お試しください',
+        text1: t('analyze_error_title'),
+        text2: t('analyze_error_retry'),
       });
     } finally {
       setIsAnalyzing(false);
@@ -241,7 +240,7 @@ const HomeScreen = ({ navigation }) => {
   const Content = (
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
       <View style={styles.header}>
-        <Text style={[styles.title, skinStyle.title]}>Tennis Serve Analyzer</Text>
+        <Text style={[styles.title, skinStyle.title]}>{t('home_title')}</Text>
         <View style={styles.subtitleRow}>
           <LanguageSwitcher />
           <IconButton
@@ -250,12 +249,13 @@ const HomeScreen = ({ navigation }) => {
             onPress={() => navigation.navigate('FAQ')}
             style={styles.faqIcon}
             iconColor="#1976d2"
-            accessibilityLabel="よくある質問"
+            accessibilityLabel={t('faq')}
           />
         </View>
         {!isPremium && (
           <Text style={[{ color: '#e53935', marginTop: 8, fontSize: 15 }, skinStyle.info]}>
-            本日の無料解析残回数：{Math.max(0, FREE_LIMIT - usageCount)} / {FREE_LIMIT}
+            {t('home_free_remaining')}
+            {Math.max(0, FREE_LIMIT - usageCount)} / {FREE_LIMIT}
           </Text>
         )}
       </View>
@@ -263,16 +263,16 @@ const HomeScreen = ({ navigation }) => {
       {(currentStep === 1 || (currentStep === 2 && !selectedFile)) && (
         <Card style={[styles.card, skinStyle.card]}>
           <Card.Content>
-            <Text style={[styles.cardTitle, skinStyle.cardTitle]}>動画を選択してください</Text>
+            <Text style={[styles.cardTitle, skinStyle.cardTitle]}>{t('home_select_video')}</Text>
             <Text style={[styles.cardDescription, skinStyle.cardDescription]}>
-              テニスサーブの動画をアップロードするか、カメラで撮影してください
+              {t('home_select_video_desc')}
             </Text>
             {isPremium && (
               <TextInput
-                label="悩んでいることをここに記載してね（任意）"
+                label={t('home_input_concern_label')}
                 value={userConcerns}
                 onChangeText={setUserConcerns}
-                placeholder="例：フォームが安定しない、パワーが出ない..."
+                placeholder={t('home_input_concern_placeholder')}
                 style={[{ marginTop: 12, backgroundColor: '#fff' }, skinStyle.textInput]}
                 multiline
               />
@@ -281,8 +281,8 @@ const HomeScreen = ({ navigation }) => {
               <Switch value={isPremium} onValueChange={setIsPremium} />
               <Text style={{ marginLeft: 8 }}>
                 {isPremium
-                  ? 'プレミアム（詳細AIアドバイスあり）'
-                  : '無料モード（簡易解析のみ）'}
+                  ? t('home_premium_label')
+                  : t('home_free_label')}
               </Text>
             </View>
             <View style={styles.guideButtonContainer}>
@@ -293,17 +293,17 @@ const HomeScreen = ({ navigation }) => {
                 icon="information"
                 compact
               >
-                撮影ガイド
+                {t('home_guide')}
               </Button>
             </View>
             <View style={styles.buttonContainer}>
               <Button
                 mode="contained"
-                onPress={handleImageLibraryPicker}  // 変更点
+                onPress={handleImageLibraryPicker}
                 style={styles.button}
                 icon="file-video"
               >
-                フォトライブラリから動画選択
+                {t('home_select_from_gallery')}
               </Button>
               <Button
                 mode="outlined"
@@ -311,11 +311,11 @@ const HomeScreen = ({ navigation }) => {
                 style={styles.button}
                 icon="camera"
               >
-                カメラで撮影
+                {t('home_take_photo')}
               </Button>
             </View>
             <Text style={styles.note}>
-              対応形式: MP4, AVI, MOV, MKV (最大100MB)
+              {t('home_note')}
             </Text>
           </Card.Content>
         </Card>
@@ -324,16 +324,16 @@ const HomeScreen = ({ navigation }) => {
       {currentStep === 2 && selectedFile && (
         <Card style={[styles.card, skinStyle.card]}>
           <Card.Content>
-            <Text style={[styles.cardTitle, skinStyle.cardTitle]}>解析準備完了</Text>
+            <Text style={[styles.cardTitle, skinStyle.cardTitle]}>{t('home_ready')}</Text>
             <Text style={[styles.cardDescription, skinStyle.cardDescription]}>
-              選択されたファイル: {selectedFile.name}
+              {t('home_selected_file')} {selectedFile.name}
             </Text>
             {isPremium && (
               <TextInput
-                label="サーブについて悩んでいること（任意）"
+                label={t('home_input_concern_label2')}
                 value={userConcerns}
                 onChangeText={setUserConcerns}
-                placeholder="例：フォームが安定しない、パワーが出ない..."
+                placeholder={t('home_input_concern_placeholder')}
                 style={[{ marginTop: 12, backgroundColor: '#fff' }, skinStyle.textInput]}
                 multiline
               />
@@ -342,13 +342,13 @@ const HomeScreen = ({ navigation }) => {
               <Switch value={isPremium} onValueChange={setIsPremium} />
               <Text style={{ marginLeft: 8 }}>
                 {isPremium
-                  ? 'プレミアム（詳細AIアドバイスあり）'
-                  : '無料モード（簡易解析のみ）'}
+                  ? t('home_premium_label')
+                  : t('home_free_label')}
               </Text>
             </View>
             {isAnalyzing ? (
               <View style={styles.progressContainer}>
-                <Text style={styles.progressText}>解析中...</Text>
+                <Text style={styles.progressText}>{t('home_analyzing')}</Text>
                 <ProgressBar progress={uploadProgress / 100} style={styles.progressBar} />
                 <Text style={styles.progressPercent}>{uploadProgress}%</Text>
               </View>
@@ -360,7 +360,7 @@ const HomeScreen = ({ navigation }) => {
                   style={styles.button}
                   icon="play"
                 >
-                  解析開始
+                  {t('home_start_analysis')}
                 </Button>
                 <Button
                   mode="outlined"
@@ -368,7 +368,7 @@ const HomeScreen = ({ navigation }) => {
                   style={styles.button}
                   icon="refresh"
                 >
-                  やり直し
+                  {t('home_reset')}
                 </Button>
               </View>
             )}
@@ -399,7 +399,7 @@ const HomeScreen = ({ navigation }) => {
       onRequestClose={() => setShowShootingGuide(false)}
       HeaderComponent={({ onRequestClose }) => (
         <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>撮影ガイド</Text>
+          <Text style={styles.modalTitle}>{t('home_guide')}</Text>
           <IconButton
             icon="close"
             iconColor="#fff"
@@ -415,7 +415,7 @@ const HomeScreen = ({ navigation }) => {
       FooterComponent={() => (
         <View style={styles.modalFooter}>
           <Text style={styles.modalFooterText}>
-            正確な解析のために、ガイドに従って撮影してください。
+            {t('home_guide_footer')}
           </Text>
         </View>
       )}
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
   scrollView: { flex: 1 },
   scrollContent: { padding: 16 },
   header: { alignItems: 'center', marginBottom: 24 },
-  title: { fontSize: 28, fontWeight: 'bold', color: '#1976d2', marginBottom: 8 },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#1976d2', marginBottom: 8 },
   subtitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
     zIndex: 99,
   },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-  modalFooter: { padding: 16, backgroundColor: 'rgba(0, 0, 0, 0.8)', alignItems: 'center' },
+    modalFooter: { padding: 16, backgroundColor: 'rgba(0, 0, 0, 0.8)', alignItems: 'center' },
   modalFooterText: { fontSize: 14, color: '#fff', textAlign: 'center', lineHeight: 20 },
 });
 
