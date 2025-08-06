@@ -80,13 +80,13 @@ class AdviceGenerator:
 
         # 総合評価
         if total_score >= 8:
-            overall = "素晴らしいサービスフォームです！細かい調整でさらに向上できます。"
+            overall = "Excellent service form! With minor adjustments, you can improve even further."
         elif total_score >= 6:
-            overall = "良好なサービスフォームです。いくつかの改善点があります。"
+            overall = "Good service form. There are a few points to improve."
         elif total_score >= 4:
-            overall = "基本的なフォームはできています。重要なポイントを改善しましょう。"
+            overall = "The basic form is there. Let's work on the key areas."
         else:
-            overall = "フォームに改善の余地があります。基礎から見直しましょう。"
+            overall = "There's plenty of room for improvement. Let's review the basics."
 
         technical_points = []
         practice_suggestions = []
@@ -95,23 +95,23 @@ class AdviceGenerator:
             score = data.get('score', 0) if isinstance(data, dict) else 0
             if score < 7:
                 if phase in ["準備", "preparation"]:
-                    technical_points.append("スタンス（足の位置）の安定性を向上させましょう")
-                    practice_suggestions.append("壁に向かって正しいスタンスで素振り練習")
+                    technical_points.append("Improve the stability of your stance (foot positioning).")
+                    practice_suggestions.append("壁Practice shadow swings with the correct stance against a wall.")
                 elif phase in ["トスアップ", "ball_toss"]:
-                    technical_points.append("トスの高さと位置の一貫性を改善しましょう")
-                    practice_suggestions.append("一定の高さでトスを上げる反復練習")
+                    technical_points.append("トImprove the consistency of your toss height and position.")
+                    practice_suggestions.append("Repeat tossing the ball to the same height for consistency.")
                 elif phase in ["バックスイング", "backswing"]:
-                    technical_points.append("ラケットの引き方とタイミングを調整しましょう")
-                    practice_suggestions.append("ゆっくりとしたシャドースイング練習")
+                    technical_points.append("Adjust your racket takeback and timing.")
+                    practice_suggestions.append("Practice slow shadow swings to refine the movement.")
                 elif phase in ["フォワードスイング", "acceleration"]:
-                    technical_points.append("スイングスピードと軌道を最適化しましょう")
-                    practice_suggestions.append("段階的にスピードを上げるスイング練習")
+                    technical_points.append("Optimize your swing speed and trajectory.")
+                    practice_suggestions.append("Gradually increase swing speed during practice swings.")
                 elif phase in ["インパクト", "contact"]:
-                    technical_points.append("ボールとの接触点を改善しましょう")
-                    practice_suggestions.append("ネット前でのインパクト確認練習")
+                    technical_points.append("Improve your contact point with the ball.")
+                    practice_suggestions.append("ネPractice checking the contact point in front of the net.")
                 elif phase in ["フォロースルー", "follow_through"]:
-                    technical_points.append("フィニッシュの形を安定させましょう")
-                    practice_suggestions.append("フォロースルーを意識したスロー練習")
+                    technical_points.append("Stabilize your finish (follow-through) position.")
+                    practice_suggestions.append("Focus on the follow-through in slow-motion practice swings.")
 
         result = {
             "basic_advice": overall,

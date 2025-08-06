@@ -40,9 +40,9 @@ const gradientComponents = {
 
 // --- 追加：総合スコアからレベル名を返す関数 ---
 const getSkillLevel = (score) => {
-  if (score < 6) return '初心者';
-  if (score < 8) return '中級者';
-  return '上級者';
+  if (score < 6) return 'Beginner';
+  if (score < 8) return 'Intermediate level';
+  return 'Advanced level';
 };
 
 const ResultScreen = ({ route, navigation }) => {
@@ -121,7 +121,7 @@ const ResultScreen = ({ route, navigation }) => {
       {analysisResult.phase_scores && (
         <Card style={[styles.card, { backgroundColor: skin.background }]}>
           <Card.Content>
-            <Text style={[styles.cardTitle, { color: skin.primary }]}>フェーズ別評価</Text>
+            <Text style={[styles.cardTitle, { color: skin.primary }]}>Phase Scores</Text>
             <Divider style={styles.divider} />
             {Object.entries(analysisResult.phase_scores).map(([phase, score]) => (
               <View key={phase} style={styles.phaseItem}>
@@ -147,12 +147,12 @@ const ResultScreen = ({ route, navigation }) => {
       {analysisResult.overlay_images && analysisResult.overlay_images.length > 0 && (
         <Card style={[styles.card, { backgroundColor: skin.background }]}>
           <Card.Content>
-            <Text style={[styles.cardTitle, { color: skin.primary }]}>オーバーレイ画像</Text>
+            <Text style={[styles.cardTitle, { color: skin.primary }]}>Overlay Images</Text>
             <ScrollView >
               {analysisResult.overlay_images.map((img, idx) => (
                 <View key={idx} style={{ marginRight: 16, alignItems: 'center' }}>
                   <Text style={{ fontSize: 14, color: skin.text, marginBottom: 8 }}>
-                    ポーズ {idx + 1}
+                    Pose {idx + 1}
                   </Text>
                   <Image
                     source={{ uri: 'http://192.168.10.117:5001' + img }}
@@ -186,7 +186,7 @@ const ResultScreen = ({ route, navigation }) => {
       {analysisResult.advice && analysisResult.advice.basic_advice && (
         <Card style={[styles.card, { backgroundColor: skin.background }]}>
           <Card.Content>
-            <Text style={[styles.cardTitle, { color: skin.primary }]}>基本アドバイス</Text>
+            <Text style={[styles.cardTitle, { color: skin.primary }]}>Basic Advice</Text>
             <Divider style={styles.divider} />
             <Text style={[styles.analysisText, { color: skin.text }]}>{analysisResult.advice.basic_advice}</Text>
           </Card.Content>
@@ -196,14 +196,12 @@ const ResultScreen = ({ route, navigation }) => {
       {/* --- AI詳細アドバイス --- */}
       <Card style={[styles.card, { backgroundColor: skin.background }]}>
         <Card.Content>
-          <Text style={[styles.cardTitle, { color: skin.primary }]}>AI詳細アドバイス</Text>
+          <Text style={[styles.cardTitle, { color: skin.primary }]}>Detailed AI Advice</Text>
           <Divider style={styles.divider} />
-          <Text style={[{ fontWeight: 'bold', marginBottom: 8, color: skin.text }]}>
-            {analysisResult.advice?.enhanced ? 'ChatGPTによる詳細アドバイス' : '基本アドバイス'}
-          </Text>
+         
           {analysisResult.advice?.detailed_advice
             ? <View>{formatAIResponse(analysisResult.advice.detailed_advice)}</View>
-            : <Text style={{ color: '#888' }}>無料ユーザーには詳細アドバイスを表示しません。</Text>
+            : <Text style={{ color: '#888' }}>Detailed advice is only available for premium users.</Text>
           }
 
           {/* ワンポイントアドバイス */}
@@ -237,7 +235,7 @@ const ResultScreen = ({ route, navigation }) => {
           icon="refresh"
           labelStyle={{ color: skin.text === '#f8f8f8' ? '#fff' : skin.text }}
         >
-          新しい解析
+          New Analysis
         </Button>
         <Button
           mode="outlined"
@@ -249,7 +247,7 @@ const ResultScreen = ({ route, navigation }) => {
           icon="share"
           labelStyle={{ color: skin.primary }}
         >
-          結果をシェア
+          Share Results
         </Button>
       </View>
     </ScrollView>
