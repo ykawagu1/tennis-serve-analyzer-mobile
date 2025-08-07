@@ -1,5 +1,7 @@
 import './src/i18n';
 import React from 'react';
+import { LanguageProvider } from './src/contexts/LanguageContext';
+
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -123,6 +125,7 @@ const SkinThemeProvider = ({ children }) => {
 
 export default function App() {
   return (
+    <LanguageProvider>
     <SkinProvider>
       <SkinThemeProvider>
         <PermissionManager>
@@ -134,5 +137,6 @@ export default function App() {
         </PermissionManager>
       </SkinThemeProvider>
     </SkinProvider>
+    </LanguageProvider>
   );
 }

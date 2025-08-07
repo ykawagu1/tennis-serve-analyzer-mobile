@@ -36,7 +36,7 @@ class AdviceGenerator:
         language: str = 'ja'
     ) -> Dict:
         logger.info(f"アドバイス生成開始 - ChatGPT使用: {use_chatgpt}, 気になること: {bool(user_concerns)}")
-        basic_advice = self._generate_basic_advice(analysis_data)
+        basic_advice = self._generate_basic_advice(analysis_data, language=language)
 
         if use_chatgpt and self.api_key:
             try:
@@ -59,48 +59,192 @@ class AdviceGenerator:
             basic_advice['error'] = '有料プランのみAI詳細アドバイスを利用できます。'
             return basic_advice
 
-    def _generate_basic_advice(self, analysis_data: Dict) -> Dict:
+    def _generate_basic_advice(self, analysis_data: Dict, language: str = 'en') -> Dict:
+        # 総合評価メッセージ
+        BASIC_ADVICE_MESSAGES = {
+            'ja': [
+                "素晴らしいサーブフォームです！細かな調整でさらに上達できます。",
+                "良いサーブフォームです。いくつか改善点があります。",
+                "基本のフォームはできています。重要なポイントを強化しましょう。",
+                "改善の余地がたくさんあります。基礎から見直しましょう。"
+            ],
+            'en': [
+                "Excellent service form! With minor adjustments, you can improve even further.",
+                "Good service form. There are a few points to improve.",
+                "The basic form is there. Let's work on the key areas.",
+                "There's plenty of room for improvement. Let's review the basics."
+            ],
+            'es': [
+                "¡Excelente forma de saque! Con pequeños ajustes, puedes mejorar aún más.",
+                "Buena forma de saque. Hay algunos puntos por mejorar.",
+                "La forma básica está lograda. Trabajemos en los aspectos clave.",
+                "Hay mucho margen de mejora. Repasemos los conceptos básicos."
+            ],
+            'pt': [
+                "Excelente forma de saque! Com pequenos ajustes, você pode melhorar ainda mais.",
+                "Boa forma de saque. Há alguns pontos a melhorar.",
+                "A forma básica está presente. Vamos trabalhar nos pontos principais.",
+                "Há muito espaço para melhoria. Vamos revisar o básico."
+            ],
+            'fr': [
+                "Excellente forme de service ! Avec quelques ajustements, vous pouvez encore progresser.",
+                "Bonne forme de service. Quelques points à améliorer.",
+                "La forme de base est présente. Travaillons les points clés.",
+                "Il y a beaucoup de marge de progression. Reprenons les bases."
+            ],
+            'de': [
+                "Ausgezeichnete Aufschlagtechnik! Mit kleinen Anpassungen kannst du noch besser werden.",
+                "Gute Aufschlagtechnik. Es gibt einige Punkte zu verbessern.",
+                "Die Grundform stimmt. Lass uns an den wichtigsten Punkten arbeiten.",
+                "Es gibt viel Verbesserungspotenzial. Gehen wir die Grundlagen noch einmal durch."
+            ]
+        }
+
+        # Phaseごとの多言語アドバイス辞書
+        PHASE_DETAILS = {
+            "preparation": {
+                "advice": {
+                    'ja': "スタンス（足の位置）の安定性を高めましょう。",
+                    'en': "Improve the stability of your stance (foot positioning).",
+                    'es': "Mejora la estabilidad de tu postura (posición de los pies).",
+                    'pt': "Melhore a estabilidade da sua posição (posicionamento dos pés).",
+                    'fr': "Améliorez la stabilité de votre position (placement des pieds).",
+                    'de': "Verbessere die Stabilität deines Stands (Fußpositionierung)."
+                },
+                "suggestion": {
+                    'ja': "壁に向かって正しいスタンスでシャドースイング練習をしましょう。",
+                    'en': "Practice shadow swings with the correct stance against a wall.",
+                    'es': "Practica swings al aire con la postura correcta frente a una pared.",
+                    'pt': "Pratique swings no ar com a postura correta em frente à parede.",
+                    'fr': "Entraînez-vous à faire des swings à vide avec la bonne position face à un mur.",
+                    'de': "Übe Schattenaufschläge mit korrektem Stand vor einer Wand."
+                }
+            },
+            "ball_toss": {
+                "advice": {
+                    'ja': "トスの高さと位置の安定性を高めましょう。",
+                    'en': "Improve the consistency of your toss height and position.",
+                    'es': "Mejora la consistencia de la altura y posición del lanzamiento.",
+                    'pt': "Melhore a consistência da altura e posição do lançamento.",
+                    'fr': "Améliorez la régularité de la hauteur et de la position du lancer.",
+                    'de': "Verbessere die Konstanz der Wurfhöhe und -position."
+                },
+                "suggestion": {
+                    'ja': "毎回同じ高さにトスできるように反復練習しましょう。",
+                    'en': "Repeat tossing the ball to the same height for consistency.",
+                    'es': "Repite el lanzamiento de la pelota a la misma altura para mayor consistencia.",
+                    'pt': "Repita o lançamento da bola sempre na mesma altura para maior consistência.",
+                    'fr': "Répétez le lancer à la même hauteur pour plus de régularité.",
+                    'de': "Wiederhole den Ballwurf immer auf die gleiche Höhe für mehr Konstanz."
+                }
+            },
+            "trophy_position": {
+                "advice": {
+                    'ja': "トロフィーポジションをマスターして安定した力を生み出しましょう。",
+                    'en': "Master the trophy position to build power and consistency.",
+                    'es': "Domina la posición de trofeo para ganar potencia y regularidad.",
+                    'pt': "Domine a posição de troféu para obter força e consistência.",
+                    'fr': "Maîtrisez la position trophy pour gagner en puissance et en régularité.",
+                    'de': "Beherrsche die Trophy-Position für mehr Kraft und Konstanz."
+                },
+                "suggestion": {
+                    'ja': "シャドースイング時にトロフィーポジションで一旦静止して確認しましょう。",
+                    'en': "Pause and check your trophy position during shadow swings.",
+                    'es': "Haz una pausa en la posición de trofeo al practicar swings al aire.",
+                    'pt': "Pare e confira a posição de troféu durante os swings no ar.",
+                    'fr': "Faites une pause dans la position trophy lors de swings à vide.",
+                    'de': "Halte bei Schattenaufschlägen kurz in der Trophy-Position an."
+                }
+            },
+            "acceleration": {
+                "advice": {
+                    'ja': "スイングスピードと軌道を最適化しましょう。",
+                    'en': "Optimize your swing speed and trajectory.",
+                    'es': "Optimiza la velocidad y trayectoria de tu swing.",
+                    'pt': "Otimize a velocidade e a trajetória do seu swing.",
+                    'fr': "Optimisez la vitesse et la trajectoire de votre swing.",
+                    'de': "Optimiere Schwunggeschwindigkeit und -bahn."
+                },
+                "suggestion": {
+                    'ja': "練習スイングで徐々にスピードを上げてみましょう。",
+                    'en': "Gradually increase swing speed during practice swings.",
+                    'es': "Aumenta gradualmente la velocidad del swing en la práctica.",
+                    'pt': "Aumente gradualmente a velocidade do swing durante os treinos.",
+                    'fr': "Augmentez progressivement la vitesse du swing à l’entraînement.",
+                    'de': "Steigere die Schwunggeschwindigkeit bei Übungsschlägen allmählich."
+                }
+            },
+            "contact": {
+                "advice": {
+                    'ja': "インパクトポイントを安定させましょう。",
+                    'en': "Improve your contact point with the ball.",
+                    'es': "Mejora el punto de contacto con la pelota.",
+                    'pt': "Melhore o ponto de contato com a bola.",
+                    'fr': "Améliorez le point de contact avec la balle.",
+                    'de': "Verbessere den Treffpunkt mit dem Ball."
+                },
+                "suggestion": {
+                    'ja': "ネット前でインパクトポイントを確認する練習をしましょう。",
+                    'en': "Practice checking the contact point in front of the net.",
+                    'es': "Practica comprobando el punto de contacto delante de la red.",
+                    'pt': "Pratique verificando o ponto de contato em frente à rede.",
+                    'fr': "Entraînez-vous à vérifier le point de contact devant le filet.",
+                    'de': "Übe, den Treffpunkt vor dem Netz zu kontrollieren."
+                }
+            },
+            "follow_through": {
+                "advice": {
+                    'ja': "フォロースルー（振り抜き）の安定性を高めましょう。",
+                    'en': "Stabilize your finish (follow-through) position.",
+                    'es': "Estabiliza la posición final del swing (follow-through).",
+                    'pt': "Estabilize a posição final do swing (follow-through).",
+                    'fr': "Stabilisez la position de finition (follow-through).",
+                    'de': "Stabilisiere deine Endposition (Ausschwung)."
+                },
+                "suggestion": {
+                    'ja': "スローモーションでフォロースルーに意識して練習しましょう。",
+                    'en': "Focus on the follow-through in slow-motion practice swings.",
+                    'es': "Concéntrate en el follow-through en swings en cámara lenta.",
+                    'pt': "Foque no follow-through durante swings em câmera lenta.",
+                    'fr': "Concentrez-vous sur le follow-through lors de swings au ralenti.",
+                    'de': "Achte bei Übungsschlägen in Zeitlupe besonders auf den Ausschwung."
+                }
+            }
+        }
+
+        # 言語フォールバック
+        lang = language if language in BASIC_ADVICE_MESSAGES else 'en'
+
+        # スコアでメッセージIndex決定
         total_score = (
             analysis_data.get('total_score')
             or analysis_data.get('tiered_evaluation', {}).get('total_score')
             or analysis_data.get('overall_score')
             or 0
         )
-        phase_analysis = analysis_data.get('phase_analysis', {})
-
         if total_score >= 8:
-            overall = "Excellent service form! With minor adjustments, you can improve even further."
+            idx = 0
         elif total_score >= 6:
-            overall = "Good service form. There are a few points to improve."
+            idx = 1
         elif total_score >= 4:
-            overall = "The basic form is there. Let's work on the key areas."
+            idx = 2
         else:
-            overall = "There's plenty of room for improvement. Let's review the basics."
+            idx = 3
+        overall = BASIC_ADVICE_MESSAGES[lang][idx]
 
+        phase_analysis = analysis_data.get('phase_analysis', {})
         technical_points = []
         practice_suggestions = []
 
         for phase, data in phase_analysis.items():
             score = data.get('score', 0) if isinstance(data, dict) else 0
             if score < 7:
-                if phase in ["準備", "preparation"]:
-                    technical_points.append("Improve the stability of your stance (foot positioning).")
-                    practice_suggestions.append("Practice shadow swings with the correct stance against a wall.")
-                elif phase in ["トスアップ", "ball_toss"]:
-                    technical_points.append("Improve the consistency of your toss height and position.")
-                    practice_suggestions.append("Repeat tossing the ball to the same height for consistency.")
-                elif phase in ["バックスイング", "backswing"]:
-                    technical_points.append("Adjust your racket takeback and timing.")
-                    practice_suggestions.append("Practice slow shadow swings to refine the movement.")
-                elif phase in ["フォワードスイング", "acceleration"]:
-                    technical_points.append("Optimize your swing speed and trajectory.")
-                    practice_suggestions.append("Gradually increase swing speed during practice swings.")
-                elif phase in ["インパクト", "contact"]:
-                    technical_points.append("Improve your contact point with the ball.")
-                    practice_suggestions.append("Practice checking the contact point in front of the net.")
-                elif phase in ["フォロースルー", "follow_through"]:
-                    technical_points.append("Stabilize your finish (follow-through) position.")
-                    practice_suggestions.append("Focus on the follow-through in slow-motion practice swings.")
+                details = PHASE_DETAILS.get(phase)
+                if details:
+                    technical_points.append(details["advice"][lang])
+                    practice_suggestions.append(details["suggestion"][lang])
+                else:
+                    print(f"WARNING: Phase {phase} not localized for language {lang}")
 
         return {
             "basic_advice": overall,
@@ -130,6 +274,7 @@ class AdviceGenerator:
             basic_advice["error"] = "ChatGPT APIからの応答が空でした"
             return basic_advice
 
+    # 以下はもともとのコードをインデント・構文エラーなしで再掲
     def _create_detailed_prompt(
         self, total_score: float, phase_analysis: Dict, basic_advice: Dict, user_concerns: str = '', language: str = 'ja'
     ) -> str:
@@ -141,7 +286,7 @@ class AdviceGenerator:
             if score < 7:
                 weak_phases.append(phase)
 
-        # ここで concerns_text を**多言語分岐で生成**
+        # concerns_text 多言語分岐
         concerns_text = ""
         if user_concerns:
             if language == "ja":
@@ -154,8 +299,6 @@ class AdviceGenerator:
                 concerns_text = f"\n\n[Preocupação(ões) específica(s) do usuário]\n{user_concerns}\n\nFoque nas preocupações acima e inclua conselhos concretos e práticos."
             elif language == "fr":
                 concerns_text = f"\n\n[Préoccupation(s) spécifique(s) de l'utilisateur]\n{user_concerns}\n\nConcentrez-vous sur les préoccupations ci-dessus et incluez des conseils concrets et pratiques."
-            elif language == "fr":
-                concerns_text = f"\n\n[Préoccupation(s) spécifique(s) de l'utilisateur]\n{user_concerns}\n\nConcentrez-vous sur les préoccupations ci-dessus et incluez des conseils concrets et pratiques."# 他言語もここで増やす
             elif language == "de":
                 concerns_text = f"\n\n[Spezifische(r) Benutzeranliegen]\n{user_concerns}\n\nKonzentrieren Sie sich auf das/die oben genannte(n) Anliegen und geben Sie konkrete, praktische Ratschläge."
         if language == "ja":
@@ -330,8 +473,6 @@ Konzentrieren Sie sich besonders auf die Phasen, die verbessert werden müssen (
 - Auch wenn das Anliegen vage ist, geben Sie wahrscheinliche Gründe und praktische Lösungen an.
 - Ist das Anliegen nicht tennisbezogen, geben Sie auch dafür Empathie und Ratschläge.
 """
- 
-        # 他言語も elif で続けて書けばOK
         else:
             prompt = "(多言語分岐を書く)"
         return prompt
@@ -347,11 +488,12 @@ Konzentrieren Sie sich besonders auf die Phasen, die verbessert werden müssen (
         one_point_section = False
         one_point_advice = []
         for line in lines:
-            if 'ワンポイント' in line or '即効性' in line:
+            if 'ワンポイント' in line or '即効性' in line or 'One-point' in line or 'Quick tip' in line:
                 one_point_section = True
                 continue
             elif one_point_section and line.strip():
-                if line.startswith('#') and 'ワンポイント' not in line:
+                # セクション区切り（#や数字始まりなど）で終了
+                if (line.startswith('#') or line.strip().startswith('1.')) and 'ワンポイント' not in line and 'One-point' not in line:
                     break
                 one_point_advice.append(line.strip())
         if one_point_advice:
