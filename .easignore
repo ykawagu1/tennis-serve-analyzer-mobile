@@ -1,0 +1,23 @@
+# .easignore
+node_modules
+.git
+.gitignore
+npm-debug.log
+src/**/*.test.js
+coverage
+android/.gradle
+ios/Pods
+.expo
+.expo-shared
+.env
+.DS_Store
+*.log
+output
+uploads
+screenshots
+.vscode
+*.mov
+*.mp4
+*.zip
+*.tar.gz
+*.tar

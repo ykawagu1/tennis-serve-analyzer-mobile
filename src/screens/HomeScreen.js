@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, SafeAreaView, Alert, Image
+  View, Text, StyleSheet, ScrollView, SafeAreaView, Alert, Image,
 } from 'react-native';
-import { Button, Card, ProgressBar, IconButton, TextInput, Switch } from 'react-native-paper';
+import { Button, Card, IconButton, TextInput, Switch, ActivityIndicator } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
@@ -22,17 +22,17 @@ const HomeScreen = ({ navigation }) => {
   const { skin, skinStyle, skinKey, isPremium, setIsPremium } = useSkin();
   const [selectedFile, setSelectedFile] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false); // ← 動画選択中フラグ
   const [analysisResult, setAnalysisResult] = useState(null);
   const [error, setError] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [userConcerns, setUserConcerns] = useState('');
   const [showShootingGuide, setShowShootingGuide] = useState(false);
   const [usageCount, setUsageCount] = useState(0);
 
-  const { t , i18n} = useTranslation();
+  const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
-  // ナビゲーションヘッダーにロゴを設定
+
   useFocusEffect(
     useCallback(() => {
       navigation.setOptions({
@@ -64,8 +64,9 @@ const HomeScreen = ({ navigation }) => {
         setAnalysisResult(null);
         setError(null);
         setCurrentStep(1);
-        setUploadProgress(0);
         setUserConcerns('');
+        setIsSelecting(false);
+        setIsAnalyzing(false);
         const today = new Date().toLocaleDateString();
         const usageDate = await AsyncStorage.getItem('usageDate');
         if (usageDate !== today) {
@@ -83,8 +84,10 @@ const HomeScreen = ({ navigation }) => {
   // フォトライブラリから動画選択
   const handleImageLibraryPicker = async () => {
     try {
+      setIsSelecting(true);
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
+        setIsSelecting(false);
         Alert.alert(t('permission_error_title'), t('permission_error_media_library'));
         return;
       }
@@ -93,6 +96,8 @@ const HomeScreen = ({ navigation }) => {
         allowsEditing: false,
         quality: 1,
       });
+
+      setIsSelecting(false);
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
@@ -115,6 +120,7 @@ const HomeScreen = ({ navigation }) => {
         });
       }
     } catch (err) {
+      setIsSelecting(false);
       console.error('動画選択エラー:', err);
       Alert.alert(t('error_title'), t('video_select_error'));
     }
@@ -123,8 +129,10 @@ const HomeScreen = ({ navigation }) => {
   // カメラで撮影
   const handleCameraCapture = async () => {
     try {
+      setIsSelecting(true);
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
+        setIsSelecting(false);
         Alert.alert(t('permission_error_title'), t('permission_error_camera'));
         return;
       }
@@ -134,6 +142,9 @@ const HomeScreen = ({ navigation }) => {
         quality: 1,
         videoMaxDuration: 60,
       });
+
+      setIsSelecting(false);
+
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
         setSelectedFile({
@@ -151,6 +162,7 @@ const HomeScreen = ({ navigation }) => {
         });
       }
     } catch (err) {
+      setIsSelecting(false);
       console.error('カメラエラー:', err);
       Alert.alert(t('error_title'), t('camera_capture_error'));
     }
@@ -175,7 +187,6 @@ const HomeScreen = ({ navigation }) => {
 
     setIsAnalyzing(true);
     setError(null);
-    setUploadProgress(0);
     try {
       const formData = new FormData();
       formData.append('video', {
@@ -187,13 +198,9 @@ const HomeScreen = ({ navigation }) => {
         formData.append('user_concerns', userConcerns);
       }
       formData.append('is_premium', isPremium ? 'true' : 'false');
-      formData.append('language', currentLang); // ←ここを追加
+      formData.append('language', currentLang);
       const response = await axios.post(`${API_BASE_URL}/api/analyze`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress: (progressEvent) => {
-          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setUploadProgress(progress);
-        },
       });
 
       if (response.data && response.data.success && response.data.result) {
@@ -220,7 +227,6 @@ const HomeScreen = ({ navigation }) => {
       });
     } finally {
       setIsAnalyzing(false);
-      setUploadProgress(0);
     }
   };
 
@@ -228,13 +234,10 @@ const HomeScreen = ({ navigation }) => {
     setSelectedFile(null);
     setCurrentStep(1);
     setError(null);
-    setUploadProgress(0);
     setUserConcerns('');
   };
 
   const shootingGuideImages = [require('../../assets/images/camera_guide.png')];
-
-  // ======== ここから分岐UIラップ ========
   const isGradient = isPremium && skinKey === 'gradient-blue';
 
   const Content = (
@@ -263,60 +266,73 @@ const HomeScreen = ({ navigation }) => {
       {(currentStep === 1 || (currentStep === 2 && !selectedFile)) && (
         <Card style={[styles.card, skinStyle.card]}>
           <Card.Content>
-            <Text style={[styles.cardTitle, skinStyle.cardTitle]}>{t('home_select_video')}</Text>
-            <Text style={[styles.cardDescription, skinStyle.cardDescription]}>
-              {t('home_select_video_desc')}
-            </Text>
-            {isPremium && (
-              <TextInput
-                label={t('home_input_concern_label')}
-                value={userConcerns}
-                onChangeText={setUserConcerns}
-                placeholder={t('home_input_concern_placeholder')}
-                style={[{ marginTop: 12, backgroundColor: '#fff' }, skinStyle.textInput]}
-                multiline
-              />
+            {/* くるくるマーク：動画選択中 */}
+            {isSelecting && (
+              <View style={{ alignItems: 'center', margin: 32 }}>
+                <ActivityIndicator animating={true} size="large" color="#1976d2" />
+                <Text style={{ marginTop: 16 }}>{t('video_preparing') || '動画を準備しています...'}</Text>
+              </View>
             )}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12 }}>
-              <Switch value={isPremium} onValueChange={setIsPremium} />
-              <Text style={{ marginLeft: 8 }}>
-                {isPremium
-                  ? t('home_premium_label')
-                  : t('home_free_label')}
-              </Text>
-            </View>
-            <View style={styles.guideButtonContainer}>
-              <Button
-                mode="outlined"
-                onPress={() => setShowShootingGuide(true)}
-                style={styles.guideButton}
-                icon="information"
-                compact
-              >
-                {t('home_guide')}
-              </Button>
-            </View>
-            <View style={styles.buttonContainer}>
-              <Button
-                mode="contained"
-                onPress={handleImageLibraryPicker}
-                style={styles.button}
-                icon="file-video"
-              >
-                {t('home_select_from_gallery')}
-              </Button>
-              <Button
-                mode="outlined"
-                onPress={handleCameraCapture}
-                style={styles.button}
-                icon="camera"
-              >
-                {t('home_take_photo')}
-              </Button>
-            </View>
-            <Text style={styles.note}>
-              {t('home_note')}
-            </Text>
+
+            {/* 通常UI（くるくるが出てない時だけ） */}
+            {!isSelecting && (
+              <>
+                <Text style={[styles.cardTitle, skinStyle.cardTitle]}>{t('home_select_video')}</Text>
+                <Text style={[styles.cardDescription, skinStyle.cardDescription]}>
+                  {t('home_select_video_desc')}
+                </Text>
+                {isPremium && (
+                  <TextInput
+                    label={t('home_input_concern_label')}
+                    value={userConcerns}
+                    onChangeText={setUserConcerns}
+                    placeholder={t('home_input_concern_placeholder')}
+                    style={[{ marginTop: 12, backgroundColor: '#fff' }, skinStyle.textInput]}
+                    multiline
+                  />
+                )}
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12 }}>
+                  <Switch value={isPremium} onValueChange={setIsPremium} />
+                  <Text style={{ marginLeft: 8 }}>
+                    {isPremium
+                      ? t('home_premium_label')
+                      : t('home_free_label')}
+                  </Text>
+                </View>
+                <View style={styles.guideButtonContainer}>
+                  <Button
+                    mode="outlined"
+                    onPress={() => setShowShootingGuide(true)}
+                    style={styles.guideButton}
+                    icon="information"
+                    compact
+                  >
+                    {t('home_guide')}
+                  </Button>
+                </View>
+                <View style={styles.buttonContainer}>
+                  <Button
+                    mode="contained"
+                    onPress={handleImageLibraryPicker}
+                    style={styles.button}
+                    icon="file-video"
+                  >
+                    {t('home_select_from_gallery')}
+                  </Button>
+                  <Button
+                    mode="outlined"
+                    onPress={handleCameraCapture}
+                    style={styles.button}
+                    icon="camera"
+                  >
+                    {t('home_take_photo')}
+                  </Button>
+                </View>
+                <Text style={styles.note}>
+                  {t('home_note')}
+                </Text>
+              </>
+            )}
           </Card.Content>
         </Card>
       )}
@@ -324,53 +340,55 @@ const HomeScreen = ({ navigation }) => {
       {currentStep === 2 && selectedFile && (
         <Card style={[styles.card, skinStyle.card]}>
           <Card.Content>
-            <Text style={[styles.cardTitle, skinStyle.cardTitle]}>{t('home_ready')}</Text>
-            <Text style={[styles.cardDescription, skinStyle.cardDescription]}>
-              {t('home_selected_file')} {selectedFile.name}
-            </Text>
-            {isPremium && (
-              <TextInput
-                label={t('home_input_concern_label2')}
-                value={userConcerns}
-                onChangeText={setUserConcerns}
-                placeholder={t('home_input_concern_placeholder')}
-                style={[{ marginTop: 12, backgroundColor: '#fff' }, skinStyle.textInput]}
-                multiline
-              />
-            )}
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12 }}>
-              <Switch value={isPremium} onValueChange={setIsPremium} />
-              <Text style={{ marginLeft: 8 }}>
-                {isPremium
-                  ? t('home_premium_label')
-                  : t('home_free_label')}
-              </Text>
-            </View>
+            {/* くるくるマーク：解析中 */}
             {isAnalyzing ? (
-              <View style={styles.progressContainer}>
-                <Text style={styles.progressText}>{t('home_analyzing')}</Text>
-                <ProgressBar progress={uploadProgress / 100} style={styles.progressBar} />
-                <Text style={styles.progressPercent}>{uploadProgress}%</Text>
+              <View style={{ alignItems: 'center', margin: 32 }}>
+                <ActivityIndicator animating={true} size="large" color="#1976d2" />
+                <Text style={{ marginTop: 16 }}>{t('analyzing') || 'AIで解析中...'}</Text>
               </View>
             ) : (
-              <View style={styles.buttonContainer}>
-                <Button
-                  mode="contained"
-                  onPress={handleAnalyze}
-                  style={styles.button}
-                  icon="play"
-                >
-                  {t('home_start_analysis')}
-                </Button>
-                <Button
-                  mode="outlined"
-                  onPress={handleReset}
-                  style={styles.button}
-                  icon="refresh"
-                >
-                  {t('home_reset')}
-                </Button>
-              </View>
+              <>
+                <Text style={[styles.cardTitle, skinStyle.cardTitle]}>{t('home_ready')}</Text>
+                <Text style={[styles.cardDescription, skinStyle.cardDescription]}>
+                  {t('home_selected_file')} {selectedFile.name}
+                </Text>
+                {isPremium && (
+                  <TextInput
+                    label={t('home_input_concern_label2')}
+                    value={userConcerns}
+                    onChangeText={setUserConcerns}
+                    placeholder={t('home_input_concern_placeholder')}
+                    style={[{ marginTop: 12, backgroundColor: '#fff' }, skinStyle.textInput]}
+                    multiline
+                  />
+                )}
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12 }}>
+                  <Switch value={isPremium} onValueChange={setIsPremium} />
+                  <Text style={{ marginLeft: 8 }}>
+                    {isPremium
+                      ? t('home_premium_label')
+                      : t('home_free_label')}
+                  </Text>
+                </View>
+                <View style={styles.buttonContainer}>
+                  <Button
+                    mode="contained"
+                    onPress={handleAnalyze}
+                    style={styles.button}
+                    icon="play"
+                  >
+                    {t('home_start_analysis')}
+                  </Button>
+                  <Button
+                    mode="outlined"
+                    onPress={handleReset}
+                    style={styles.button}
+                    icon="refresh"
+                  >
+                    {t('home_reset')}
+                  </Button>
+                </View>
+              </>
             )}
           </Card.Content>
         </Card>
@@ -470,10 +488,8 @@ const styles = StyleSheet.create({
   note: { fontSize: 12, color: '#666', textAlign: 'center', marginTop: 16 },
   progressContainer: { alignItems: 'center' },
   progressText: { fontSize: 16, marginBottom: 8 },
-  progressBar: { width: '100%', height: 8, marginBottom: 8 },
-  progressPercent: { fontSize: 14, color: '#666' },
   errorCard: { backgroundColor: '#ffebee', marginBottom: 16 },
-  errorText: { color:'#c62828', textAlign: 'center' },
+  errorText: { color: '#c62828', textAlign: 'center' },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -483,8 +499,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     zIndex: 99,
   },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-    modalFooter: { padding: 16, backgroundColor: 'rgba(0, 0, 0, 0.8)', alignItems: 'center' },
+    modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+  modalFooter: { padding: 16, backgroundColor: 'rgba(0, 0, 0, 0.8)', alignItems: 'center' },
   modalFooterText: { fontSize: 14, color: '#fff', textAlign: 'center', lineHeight: 20 },
 });
 

@@ -12,8 +12,9 @@ import { Card, Button, Divider } from 'react-native-paper';
 import { useSkin } from '../SkinContext';
 import { useTranslation } from 'react-i18next';
 
-// グラデーション背景
-import AnimatedGradientBackground from '../components/AnimatedGradientBackground'; // gradient-blue
+// ...グラデーション背景 import（省略せずすべて）
+
+import AnimatedGradientBackground from '../components/AnimatedGradientBackground';
 import AnimatedRedGradientBackground from '../components/AnimatedRedGradientBackground';
 import AnimatedPurpleGradientBackground from '../components/AnimatedPurpleGradientBackground';
 import AnimatedSunsetGradientBackground from '../components/AnimatedSunsetGradientBackground';
@@ -24,7 +25,7 @@ import AnimatedNeonStrobeBackground from '../components/AnimatedNeonStrobeBackgr
 import AnimatedAuroraBackground from '../components/AnimatedAuroraBackground';
 import AnimatedCandyPopBackground from '../components/AnimatedCandyPopBackground';
 
-/* ===== ヘルパー（JS版） ===== */
+// ===== normalize, pick, 各種定数（TITLESなど）を元コードどおり宣言 =====
 const normalize = (lang) => {
   if (!lang) return 'en';
   const lower = String(lang).toLowerCase();
@@ -37,25 +38,7 @@ const normalize = (lang) => {
 const pick = (dict, locale) =>
   (dict && dict[locale]) ?? (dict && dict.en) ?? (dict && Object.values(dict)[0]);
 
-/* ===== 多言語ラベル ===== */
-const NEW_ANALYSIS_LABELS = {
-  ja: '新しい解析',
-  en: 'New Analysis',
-  de: 'Neue Analyse',
-  fr: 'Nouvelle analyse',
-  es: 'Nuevo análisis',
-  pt: 'Nova análise',
-};
-
-const SHARE_RESULTS_LABELS = {
-  ja: '結果をシェア',
-  en: 'Share Results',
-  de: 'Ergebnisse teilen',
-  fr: 'Partager les résultats',
-  es: 'Compartir resultados',
-  pt: 'Compartilhar resultados',
-};
-
+// --- 各種多言語ラベル、TITLES, PHASE_LABELS, gradientComponents, getSkillLevelも元コードどおり省略せず記述 ---
 const TITLES = {
   score:    { ja: '総合スコア',         en: 'Total Score',          de: 'Gesamtergebnis',     fr: 'Score total',        es: 'Puntuación total',     pt: 'Pontuação total' },
   phase:    { ja: 'フェーズ別スコア',     en: 'Phase Scores',         de: 'Phasenbewertung',    fr: 'Scores par phase',   es: 'Puntuación por fase',  pt: 'Pontuação por fase' },
@@ -69,7 +52,6 @@ const TITLES = {
   program:  { ja: '改善プログラム',        en: 'Improvement Program',  de: 'Verbesserungsprogramm', fr: 'Programme d\'amélioration', es: 'Programa de mejora', pt: 'Programa de melhoria' },
 };
 
-// フェーズキー→表示名（画面内の {phase} を多言語化）
 const PHASE_LABELS = {
   preparation:    { ja: '準備',            en: 'Preparation',      de: 'Vorbereitung',   fr: 'Préparation',  es: 'Preparación',   pt: 'Preparação' },
   ball_toss:      { ja: 'トス',            en: 'Ball Toss',        de: 'Ballwurf',       fr: 'Lancer',       es: 'Lanzamiento',   pt: 'Lançamento' },
@@ -79,7 +61,6 @@ const PHASE_LABELS = {
   follow_through: { ja: 'フォロースルー',  en: 'Follow-through',   de: 'Ausschwung',     fr: 'Finish',       es: 'Terminación',   pt: 'Follow-through' },
 };
 
-// グラデーションMap
 const gradientComponents = {
   'gradient-blue': AnimatedGradientBackground,
   'gradient-red': AnimatedRedGradientBackground,
@@ -120,15 +101,39 @@ const getSkillLevel = (score, locale) => {
   return 'Advanced level';
 };
 
+const NEW_ANALYSIS_LABELS = {
+  ja: '新しい解析',
+  en: 'New Analysis',
+  de: 'Neue Analyse',
+  fr: 'Nouvelle analyse',
+  es: 'Nuevo análisis',
+  pt: 'Nova análise',
+};
+
+const SHARE_RESULTS_LABELS = {
+  ja: '結果をシェア',
+  en: 'Share Results',
+  de: 'Ergebnisse teilen',
+  fr: 'Partager les résultats',
+  es: 'Compartir resultados',
+  pt: 'Compartilhar resultados',
+};
+
 const ResultScreen = ({ route, navigation }) => {
+  // route, navigationを安全にガード（渡されていない場合は何も表示しない）
+  if (!route || !route.params || !route.params.analysisResult) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+        <Text style={{ fontSize: 16, marginBottom: 16 }}>解析データが見つかりません。もう一度解析してください。</Text>
+        <Button mode="contained" onPress={() => navigation.goBack()}>戻る</Button>
+      </View>
+    );
+  }
   const { analysisResult } = route.params;
   const { skin, skinKey, isPremium } = useSkin();
   const { i18n } = useTranslation();
 
-  // i18nと同期した2文字ロケール
   const locale = normalize(i18n.language);
-
-  // i18n初期化待ち（初回英語チラつき防止）
   if (!i18n.isInitialized) return null;
 
   // Markdown風整形
@@ -175,7 +180,7 @@ const ResultScreen = ({ route, navigation }) => {
     return elements;
   };
 
-  // === Content ===
+  // --- 本体UI ---
   const Content = (
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
       {/* --- 総合スコア --- */}
@@ -336,7 +341,7 @@ const ResultScreen = ({ route, navigation }) => {
           </Card>
         )}
 
-      {/* --- AI詳細アドバイス --- */}
+      {/* --- AI詳細アドバイス（ワンポイントアドバイスはここに入れない!） --- */}
       <Card style={[styles.card, { backgroundColor: skin.background }]}>
         <Card.Content>
           <Text style={[styles.cardTitle, { color: skin.primary }]}>
@@ -352,32 +357,38 @@ const ResultScreen = ({ route, navigation }) => {
                 : 'Detailed advice is only available for premium users.'}
             </Text>
           )}
-
-          {/* ワンポイントアドバイス */}
-          {analysisResult.advice?.one_point_advice && (
-            <View style={styles.adviceSection}>
-              <Text style={[styles.adviceTitle, { color: skin.accent }]}>
-                {pick(TITLES.onepoint, locale)}
-              </Text>
-              <View style={styles.adviceContent}>
-                {formatAIResponse(analysisResult.advice.one_point_advice, skin.text)}
-              </View>
-            </View>
-          )}
-
-          {/* 改善プログラム */}
-          {analysisResult.advice?.improvement_program && (
-            <View style={styles.adviceSection}>
-              <Text style={[styles.adviceTitle, { color: skin.accent }]}>
-                {pick(TITLES.program, locale)}
-              </Text>
-              <View style={styles.adviceContent}>
-                {formatAIResponse(analysisResult.advice.improvement_program, skin.text)}
-              </View>
-            </View>
-          )}
         </Card.Content>
       </Card>
+
+      {/* --- ワンポイントアドバイス（独立カードとして1回だけ） --- */}
+      {analysisResult.advice?.one_point_advice && (
+        <Card style={[styles.card, { backgroundColor: skin.background }]}>
+          <Card.Content>
+            <Text style={[styles.cardTitle, { color: skin.primary }]}>
+              {pick(TITLES.onepoint, locale)}
+            </Text>
+            <Divider style={styles.divider} />
+            <View style={styles.adviceContent}>
+              {formatAIResponse(analysisResult.advice.one_point_advice, skin.text)}
+            </View>
+          </Card.Content>
+        </Card>
+      )}
+
+      {/* --- 改善プログラム --- */}
+      {analysisResult.advice?.improvement_program && (
+        <Card style={[styles.card, { backgroundColor: skin.background }]}>
+          <Card.Content>
+            <Text style={[styles.cardTitle, { color: skin.primary }]}>
+              {pick(TITLES.program, locale)}
+            </Text>
+            <Divider style={styles.divider} />
+            <View style={styles.adviceContent}>
+              {formatAIResponse(analysisResult.advice.improvement_program, skin.text)}
+            </View>
+          </Card.Content>
+        </Card>
+      )}
 
       {/* --- アクションボタン --- */}
       <View style={styles.buttonContainer}>
@@ -416,8 +427,8 @@ const ResultScreen = ({ route, navigation }) => {
   );
 };
 
-/* ===== styles（そのままでOK＋微調整なし） ===== */
 const styles = StyleSheet.create({
+  // ...省略せず全スタイル貼り付けてください...
   container: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { padding: 16 },
