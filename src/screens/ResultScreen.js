@@ -1,3 +1,4 @@
+// ResultScreen.js
 import React from 'react';
 import {
   View,
@@ -5,12 +6,11 @@ import {
   StyleSheet,
   ScrollView,
   SafeAreaView,
-  Dimensions,
   Image,
 } from 'react-native';
 import { Card, Button, Divider } from 'react-native-paper';
 import { useSkin } from '../SkinContext';
-import { useLanguage } from '../contexts/LanguageContext';
+import { useTranslation } from 'react-i18next';
 
 // グラデーション背景
 import AnimatedGradientBackground from '../components/AnimatedGradientBackground'; // gradient-blue
@@ -24,38 +24,62 @@ import AnimatedNeonStrobeBackground from '../components/AnimatedNeonStrobeBackgr
 import AnimatedAuroraBackground from '../components/AnimatedAuroraBackground';
 import AnimatedCandyPopBackground from '../components/AnimatedCandyPopBackground';
 
-// ========== 多言語ラベル定義 ==========
+/* ===== ヘルパー（JS版） ===== */
+const normalize = (lang) => {
+  if (!lang) return 'en';
+  const lower = String(lang).toLowerCase();
+  if (lower === 'jp') return 'ja';
+  if (lower.startsWith('pt')) return 'pt'; // pt-BR → pt
+  if (lower.startsWith('zh')) return 'zh';
+  return lower.slice(0, 2); // en-US → en / ja-JP → ja
+};
+
+const pick = (dict, locale) =>
+  (dict && dict[locale]) ?? (dict && dict.en) ?? (dict && Object.values(dict)[0]);
+
+/* ===== 多言語ラベル ===== */
 const NEW_ANALYSIS_LABELS = {
-  ja: "新しい解析",
-  en: "New Analysis",
-  de: "Neue Analyse",
-  fr: "Nouvelle analyse",
-  es: "Nuevo análisis",
-  pt: "Nova análise",
+  ja: '新しい解析',
+  en: 'New Analysis',
+  de: 'Neue Analyse',
+  fr: 'Nouvelle analyse',
+  es: 'Nuevo análisis',
+  pt: 'Nova análise',
 };
 
 const SHARE_RESULTS_LABELS = {
-  ja: "結果をシェア",
-  en: "Share Results",
-  de: "Ergebnisse teilen",
-  fr: "Partager les résultats",
-  es: "Compartir resultados",
-  pt: "Compartilhar resultados",
+  ja: '結果をシェア',
+  en: 'Share Results',
+  de: 'Ergebnisse teilen',
+  fr: 'Partager les résultats',
+  es: 'Compartir resultados',
+  pt: 'Compartilhar resultados',
 };
 
 const TITLES = {
-  score:    { ja: "総合スコア",         en: "Total Score",          de: "Gesamtergebnis",     fr: "Score total",        es: "Puntuación total",     pt: "Pontuação total" },
-  phase:    { ja: "フェーズ別スコア",     en: "Phase Scores",         de: "Phasenbewertung",    fr: "Scores par phase",   es: "Puntuación por fase",  pt: "Pontuação por fase" },
-  overlay:  { ja: "オーバーレイ画像",     en: "Overlay Images",       de: "Overlay-Bilder",     fr: "Images superposées", es: "Imágenes de superposición", pt: "Imagens de sobreposição" },
-  analysis: { ja: "基本解析結果",         en: "Basic Analysis",       de: "Grundanalyse",       fr: "Analyse de base",    es: "Análisis básico",      pt: "Análise básica" },
-  advice:   { ja: "基本アドバイス",       en: "Basic Advice",         de: "Grundlegender Rat",  fr: "Conseil de base",    es: "Consejo básico",       pt: "Conselho básico" },
-  tech:     { ja: "技術ポイント",         en: "Technical Points",     de: "Technische Punkte",  fr: "Points techniques",  es: "Puntos técnicos",      pt: "Pontos técnicos" },
-  practice: { ja: "練習提案",             en: "Practice Suggestions", de: "Übungsvorschläge",   fr: "Suggestions de pratique", es: "Sugerencias de práctica", pt: "Sugestões de prática" },
-  ai:       { ja: "AI詳細アドバイス",      en: "Detailed AI Advice",   de: "Detaillierter KI-Rat", fr: "Conseil IA détaillé", es: "Consejo detallado de IA", pt: "Conselho detalhado de IA" },
-  onepoint: { ja: "ワンポイントアドバイス", en: "One-point Advice",     de: "Tipp des Tages",     fr: "Conseil clé",        es: "Consejo clave",        pt: "Dica única" },
-  program:  { ja: "改善プログラム",        en: "Improvement Program",  de: "Verbesserungsprogramm", fr: "Programme d'amélioration", es: "Programa de mejora", pt: "Programa de melhoria" },
+  score:    { ja: '総合スコア',         en: 'Total Score',          de: 'Gesamtergebnis',     fr: 'Score total',        es: 'Puntuación total',     pt: 'Pontuação total' },
+  phase:    { ja: 'フェーズ別スコア',     en: 'Phase Scores',         de: 'Phasenbewertung',    fr: 'Scores par phase',   es: 'Puntuación por fase',  pt: 'Pontuação por fase' },
+  overlay:  { ja: 'オーバーレイ画像',     en: 'Overlay Images',       de: 'Overlay-Bilder',     fr: 'Images superposées', es: 'Imágenes de superposición', pt: 'Imagens de sobreposição' },
+  analysis: { ja: '基本解析結果',         en: 'Basic Analysis',       de: 'Grundanalyse',       fr: 'Analyse de base',    es: 'Análisis básico',      pt: 'Análise básica' },
+  advice:   { ja: '基本アドバイス',       en: 'Basic Advice',         de: 'Grundlegender Rat',  fr: 'Conseil de base',    es: 'Consejo básico',       pt: 'Conselho básico' },
+  tech:     { ja: '技術ポイント',         en: 'Technical Points',     de: 'Technische Punkte',  fr: 'Points techniques',  es: 'Puntos técnicos',      pt: 'Pontos técnicos' },
+  practice: { ja: '練習提案',             en: 'Practice Suggestions', de: 'Übungsvorschläge',   fr: 'Suggestions de pratique', es: 'Sugerencias de práctica', pt: 'Sugestões de prática' },
+  ai:       { ja: 'AI詳細アドバイス',      en: 'Detailed AI Advice',   de: 'Detaillierter KI-Rat', fr: 'Conseil IA détaillé', es: 'Consejo detallado de IA', pt: 'Conselho detalhado de IA' },
+  onepoint: { ja: 'ワンポイントアドバイス', en: 'One-point Advice',     de: 'Tipp des Tages',     fr: 'Conseil clé',        es: 'Consejo clave',        pt: 'Dica única' },
+  program:  { ja: '改善プログラム',        en: 'Improvement Program',  de: 'Verbesserungsprogramm', fr: 'Programme d\'amélioration', es: 'Programa de mejora', pt: 'Programa de melhoria' },
 };
 
+// フェーズキー→表示名（画面内の {phase} を多言語化）
+const PHASE_LABELS = {
+  preparation:    { ja: '準備',            en: 'Preparation',      de: 'Vorbereitung',   fr: 'Préparation',  es: 'Preparación',   pt: 'Preparação' },
+  ball_toss:      { ja: 'トス',            en: 'Ball Toss',        de: 'Ballwurf',       fr: 'Lancer',       es: 'Lanzamiento',   pt: 'Lançamento' },
+  trophy_position:{ ja: 'トロフィーポジション', en: 'Trophy Position', de: 'Trophy-Position', fr: 'Position trophy', es: 'Posición trophy', pt: 'Posição trophy' },
+  acceleration:   { ja: '加速',            en: 'Acceleration',     de: 'Beschleunigung', fr: 'Accélération', es: 'Aceleración',   pt: 'Aceleração' },
+  contact:        { ja: 'インパクト',      en: 'Contact',          de: 'Treffpunkt',     fr: 'Contact',      es: 'Contacto',      pt: 'Contato' },
+  follow_through: { ja: 'フォロースルー',  en: 'Follow-through',   de: 'Ausschwung',     fr: 'Finish',       es: 'Terminación',   pt: 'Follow-through' },
+};
+
+// グラデーションMap
 const gradientComponents = {
   'gradient-blue': AnimatedGradientBackground,
   'gradient-red': AnimatedRedGradientBackground,
@@ -70,40 +94,45 @@ const gradientComponents = {
 };
 
 const getSkillLevel = (score, locale) => {
-  if (locale === "ja") {
-    if (score < 6) return "初級";
-    if (score < 8) return "中級";
-    return "上級";
-  } else if (locale === "de") {
-    if (score < 6) return "Anfänger";
-    if (score < 8) return "Mittelstufe";
-    return "Fortgeschritten";
-  } else if (locale === "fr") {
-    if (score < 6) return "Débutant";
-    if (score < 8) return "Intermédiaire";
-    return "Avancé";
-  } else if (locale === "es") {
-    if (score < 6) return "Principiante";
-    if (score < 8) return "Intermedio";
-    return "Avanzado";
-  } else if (locale === "pt") {
-    if (score < 6) return "Iniciante";
-    if (score < 8) return "Intermediário";
-    return "Avançado";
+  if (locale === 'ja') {
+    if (score < 6) return '初級';
+    if (score < 8) return '中級';
+    return '上級';
+  } else if (locale === 'de') {
+    if (score < 6) return 'Anfänger';
+    if (score < 8) return 'Mittelstufe';
+    return 'Fortgeschritten';
+  } else if (locale === 'fr') {
+    if (score < 6) return 'Débutant';
+    if (score < 8) return 'Intermédiaire';
+    return 'Avancé';
+  } else if (locale === 'es') {
+    if (score < 6) return 'Principiante';
+    if (score < 8) return 'Intermedio';
+    return 'Avanzado';
+  } else if (locale === 'pt') {
+    if (score < 6) return 'Iniciante';
+    if (score < 8) return 'Intermediário';
+    return 'Avançado';
   }
-  if (score < 6) return "Beginner";
-  if (score < 8) return "Intermediate level";
-  return "Advanced level";
+  if (score < 6) return 'Beginner';
+  if (score < 8) return 'Intermediate level';
+  return 'Advanced level';
 };
 
 const ResultScreen = ({ route, navigation }) => {
   const { analysisResult } = route.params;
   const { skin, skinKey, isPremium } = useSkin();
-  const { language } = useLanguage(); // ★ここでグローバル言語取得
-  const locale = language || 'en';    // fallbackで'en'
+  const { i18n } = useTranslation();
+
+  // i18nと同期した2文字ロケール
+  const locale = normalize(i18n.language);
+
+  // i18n初期化待ち（初回英語チラつき防止）
+  if (!i18n.isInitialized) return null;
 
   // Markdown風整形
-  const formatAIResponse = (text) => {
+  const formatAIResponse = (text, textColor = '#fff') => {
     if (!text) return null;
     const lines = text.split('\n');
     const elements = [];
@@ -111,27 +140,33 @@ const ResultScreen = ({ route, navigation }) => {
       const trimmedLine = line.trim();
       if (trimmedLine.startsWith('【') && trimmedLine.endsWith('】')) {
         elements.push(
-          <Text key={`h2-${index}`} style={[styles.heading2, { color: skin.primary }]}>
+          <Text key={`h2-${index}`} style={[styles.heading2, { color: textColor }]}>
             {trimmedLine}
           </Text>
         );
       } else if (/^\d+\./.test(trimmedLine)) {
         elements.push(
           <View key={`ol-${index}`} style={styles.listItem}>
-            <Text style={[styles.numberBullet, { color: skin.accent }]}>{trimmedLine.match(/^\d+\./)[0]}</Text>
-            <Text style={styles.listText}>{trimmedLine.replace(/^\d+\.\s*/, '')}</Text>
+            <Text style={[styles.numberBullet, { color: textColor }]}>
+              {trimmedLine.match(/^\d+\./)[0]}
+            </Text>
+            <Text style={[styles.listText, { color: textColor }]}>
+              {trimmedLine.replace(/^\d+\.\s*/, '')}
+            </Text>
           </View>
         );
       } else if (trimmedLine.startsWith('- ')) {
         elements.push(
           <View key={`li-${index}`} style={styles.listItem}>
-            <Text style={[styles.bullet, { color: skin.primary }]}>•</Text>
-            <Text style={styles.listText}>{trimmedLine.replace('- ', '')}</Text>
+            <Text style={[styles.bullet, { color: textColor }]}>•</Text>
+            <Text style={[styles.listText, { color: textColor }]}>
+              {trimmedLine.replace('- ', '')}
+            </Text>
           </View>
         );
       } else if (trimmedLine.length > 0) {
         elements.push(
-          <Text key={`p-${index}`} style={styles.paragraph}>
+          <Text key={`p-${index}`} style={[styles.paragraph, { color: textColor }]}>
             {trimmedLine}
           </Text>
         );
@@ -145,7 +180,12 @@ const ResultScreen = ({ route, navigation }) => {
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
       {/* --- 総合スコア --- */}
       {analysisResult.overall_score && (
-        <Card style={[styles.scoreCard, { backgroundColor: skin.background, borderColor: skin.primary, borderWidth: 1 }]}>
+        <Card
+          style={[
+            styles.scoreCard,
+            { backgroundColor: skin.background, borderColor: skin.primary, borderWidth: 1 },
+          ]}
+        >
           <Card.Content style={styles.scoreContent}>
             <View style={{ alignItems: 'center', marginBottom: 18 }}>
               <Image
@@ -154,14 +194,15 @@ const ResultScreen = ({ route, navigation }) => {
               />
             </View>
             <Text style={[styles.scoreLabel, { color: skin.text }]}>
-              {TITLES.score[locale] || TITLES.score.en}
+              {pick(TITLES.score, locale)}
             </Text>
             <Text style={[styles.scoreValue, { color: skin.primary }]}>
               {Number(analysisResult.overall_score).toFixed(1)}
             </Text>
             <Text style={styles.outOfTen}>/10</Text>
             <Text style={styles.skillLevelLabel}>
-              {'\n'}{getSkillLevel(Number(analysisResult.overall_score), locale)}
+              {'\n'}
+              {getSkillLevel(Number(analysisResult.overall_score), locale)}
             </Text>
           </Card.Content>
         </Card>
@@ -172,19 +213,23 @@ const ResultScreen = ({ route, navigation }) => {
         <Card style={[styles.card, { backgroundColor: skin.background }]}>
           <Card.Content>
             <Text style={[styles.cardTitle, { color: skin.primary }]}>
-              {TITLES.phase[locale] || TITLES.phase.en}
+              {pick(TITLES.phase, locale)}
             </Text>
             <Divider style={styles.divider} />
             {Object.entries(analysisResult.phase_scores).map(([phase, score]) => (
               <View key={phase} style={styles.phaseItem}>
-                <Text style={[styles.phaseLabel, { color: skin.text }]}>{phase}</Text>
+                <Text style={[styles.phaseLabel, { color: skin.text }]}>
+                  {pick(PHASE_LABELS[phase] || {}, locale) || phase}
+                </Text>
                 <View style={styles.scoreContainer}>
-                  <Text style={[styles.phaseScore, { color: skin.primary }]}>{score}/10</Text>
+                  <Text style={[styles.phaseScore, { color: skin.primary }]}>
+                    {score}/10
+                  </Text>
                   <View style={styles.scoreBar}>
                     <View
                       style={[
                         styles.scoreBarFill,
-                        { backgroundColor: skin.primary, width: `${(score / 10) * 100}%` }
+                        { backgroundColor: skin.primary, width: `${(score / 10) * 100}%` },
                       ]}
                     />
                   </View>
@@ -200,13 +245,13 @@ const ResultScreen = ({ route, navigation }) => {
         <Card style={[styles.card, { backgroundColor: skin.background }]}>
           <Card.Content>
             <Text style={[styles.cardTitle, { color: skin.primary }]}>
-              {TITLES.overlay[locale] || TITLES.overlay.en}
+              {pick(TITLES.overlay, locale)}
             </Text>
             <ScrollView>
               {analysisResult.overlay_images.map((img, idx) => (
                 <View key={idx} style={{ marginRight: 16, alignItems: 'center' }}>
                   <Text style={{ fontSize: 14, color: skin.text, marginBottom: 8 }}>
-                    Pose {idx + 1}
+                    {locale === 'ja' ? `ポーズ ${idx + 1}` : `Pose ${idx + 1}`}
                   </Text>
                   <Image
                     source={{ uri: 'http://192.168.10.117:5001' + img }}
@@ -215,7 +260,7 @@ const ResultScreen = ({ route, navigation }) => {
                       height: 140,
                       borderRadius: 12,
                       backgroundColor: '#ccc',
-                      resizeMode: 'contain'
+                      resizeMode: 'contain',
                     }}
                   />
                 </View>
@@ -230,10 +275,12 @@ const ResultScreen = ({ route, navigation }) => {
         <Card style={[styles.card, { backgroundColor: skin.background }]}>
           <Card.Content>
             <Text style={[styles.cardTitle, { color: skin.primary }]}>
-              {TITLES.analysis[locale] || TITLES.analysis.en}
+              {pick(TITLES.analysis, locale)}
             </Text>
             <Divider style={styles.divider} />
-            <Text style={[styles.analysisText, { color: skin.text }]}>{analysisResult.basic_analysis}</Text>
+            <Text style={[styles.analysisText, { color: skin.text }]}>
+              {analysisResult.basic_analysis}
+            </Text>
           </Card.Content>
         </Card>
       )}
@@ -243,68 +290,77 @@ const ResultScreen = ({ route, navigation }) => {
         <Card style={[styles.card, { backgroundColor: skin.background }]}>
           <Card.Content>
             <Text style={[styles.cardTitle, { color: skin.primary }]}>
-              {TITLES.advice[locale] || TITLES.advice.en}
+              {pick(TITLES.advice, locale)}
             </Text>
             <Divider style={styles.divider} />
-            <Text style={[styles.analysisText, { color: skin.text }]}>{analysisResult.advice.basic_advice}</Text>
+            <Text style={[styles.analysisText, { color: skin.text }]}>
+              {analysisResult.advice.basic_advice}
+            </Text>
           </Card.Content>
         </Card>
       )}
 
       {/* --- 技術ポイント --- */}
-      {analysisResult.advice?.technical_points && analysisResult.advice.technical_points.length > 0 && (
-        <Card style={[styles.card, { backgroundColor: skin.background }]}>
-          <Card.Content>
-            <Text style={[styles.cardTitle, { color: skin.primary }]}>
-              {TITLES.tech[locale] || TITLES.tech.en}
-            </Text>
-            <Divider style={styles.divider} />
-            {analysisResult.advice.technical_points.map((point, idx) => (
-              <Text key={idx} style={[styles.analysisText, { color: skin.text }]}>{point}</Text>
-            ))}
-          </Card.Content>
-        </Card>
-      )}
+      {analysisResult.advice?.technical_points &&
+        analysisResult.advice.technical_points.length > 0 && (
+          <Card style={[styles.card, { backgroundColor: skin.background }]}>
+            <Card.Content>
+              <Text style={[styles.cardTitle, { color: skin.primary }]}>
+                {pick(TITLES.tech, locale)}
+              </Text>
+              <Divider style={styles.divider} />
+              {analysisResult.advice.technical_points.map((point, idx) => (
+                <Text key={idx} style={[styles.analysisText, { color: skin.text }]}>
+                  {point}
+                </Text>
+              ))}
+            </Card.Content>
+          </Card>
+        )}
 
       {/* --- 練習提案 --- */}
-      {analysisResult.advice?.practice_suggestions && analysisResult.advice.practice_suggestions.length > 0 && (
-        <Card style={[styles.card, { backgroundColor: skin.background }]}>
-          <Card.Content>
-            <Text style={[styles.cardTitle, { color: skin.primary }]}>
-              {TITLES.practice[locale] || TITLES.practice.en}
-            </Text>
-            <Divider style={styles.divider} />
-            {analysisResult.advice.practice_suggestions.map((suggestion, idx) => (
-              <Text key={idx} style={[styles.analysisText, { color: skin.text }]}>{suggestion}</Text>
-            ))}
-          </Card.Content>
-        </Card>
-      )}
+      {analysisResult.advice?.practice_suggestions &&
+        analysisResult.advice.practice_suggestions.length > 0 && (
+          <Card style={[styles.card, { backgroundColor: skin.background }]}>
+            <Card.Content>
+              <Text style={[styles.cardTitle, { color: skin.primary }]}>
+                {pick(TITLES.practice, locale)}
+              </Text>
+              <Divider style={styles.divider} />
+              {analysisResult.advice.practice_suggestions.map((suggestion, idx) => (
+                <Text key={idx} style={[styles.analysisText, { color: skin.text }]}>
+                  {suggestion}
+                </Text>
+              ))}
+            </Card.Content>
+          </Card>
+        )}
 
       {/* --- AI詳細アドバイス --- */}
       <Card style={[styles.card, { backgroundColor: skin.background }]}>
         <Card.Content>
           <Text style={[styles.cardTitle, { color: skin.primary }]}>
-            {TITLES.ai[locale] || TITLES.ai.en}
+            {pick(TITLES.ai, locale)}
           </Text>
           <Divider style={styles.divider} />
-          {analysisResult.advice?.detailed_advice
-            ? <View>{formatAIResponse(analysisResult.advice.detailed_advice)}</View>
-            : <Text style={{ color: '#888' }}>
-                {locale === 'ja'
-                  ? "AIによる詳細アドバイスはプレミアムユーザーのみ利用可能です。"
-                  : "Detailed advice is only available for premium users."}
-              </Text>
-          }
+          {analysisResult.advice?.detailed_advice ? (
+            <View>{formatAIResponse(analysisResult.advice.detailed_advice, skin.text)}</View>
+          ) : (
+            <Text style={{ color: skin.text }}>
+              {locale === 'ja'
+                ? 'AIによる詳細アドバイスはプレミアムユーザーのみ利用可能です。'
+                : 'Detailed advice is only available for premium users.'}
+            </Text>
+          )}
 
           {/* ワンポイントアドバイス */}
           {analysisResult.advice?.one_point_advice && (
             <View style={styles.adviceSection}>
               <Text style={[styles.adviceTitle, { color: skin.accent }]}>
-                {TITLES.onepoint[locale] || TITLES.onepoint.en}
+                {pick(TITLES.onepoint, locale)}
               </Text>
               <View style={styles.adviceContent}>
-                {formatAIResponse(analysisResult.advice.one_point_advice)}
+                {formatAIResponse(analysisResult.advice.one_point_advice, skin.text)}
               </View>
             </View>
           )}
@@ -313,10 +369,10 @@ const ResultScreen = ({ route, navigation }) => {
           {analysisResult.advice?.improvement_program && (
             <View style={styles.adviceSection}>
               <Text style={[styles.adviceTitle, { color: skin.accent }]}>
-                {TITLES.program[locale] || TITLES.program.en}
+                {pick(TITLES.program, locale)}
               </Text>
               <View style={styles.adviceContent}>
-                {formatAIResponse(analysisResult.advice.improvement_program)}
+                {formatAIResponse(analysisResult.advice.improvement_program, skin.text)}
               </View>
             </View>
           )}
@@ -332,7 +388,7 @@ const ResultScreen = ({ route, navigation }) => {
           icon="refresh"
           labelStyle={{ color: skin.text === '#f8f8f8' ? '#fff' : skin.text }}
         >
-          {NEW_ANALYSIS_LABELS[locale] || NEW_ANALYSIS_LABELS['en']}
+          {pick(NEW_ANALYSIS_LABELS, locale)}
         </Button>
         <Button
           mode="outlined"
@@ -344,7 +400,7 @@ const ResultScreen = ({ route, navigation }) => {
           icon="share"
           labelStyle={{ color: skin.primary }}
         >
-          {SHARE_RESULTS_LABELS[locale] || SHARE_RESULTS_LABELS['en']}
+          {pick(SHARE_RESULTS_LABELS, locale)}
         </Button>
       </View>
     </ScrollView>
@@ -355,53 +411,44 @@ const ResultScreen = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: skin.background }]}>
-      {GradientComponent ? (
-        <GradientComponent>
-          {Content}
-        </GradientComponent>
-      ) : (
-        Content
-      )}
+      {GradientComponent ? <GradientComponent>{Content}</GradientComponent> : Content}
     </SafeAreaView>
   );
 };
 
-// ... styles はそのままコピペOK
-
-// ↓↓↓ styles部分は省略可能。いままでのをそのまま使ってOK ↓↓↓
-
+/* ===== styles（そのままでOK＋微調整なし） ===== */
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { padding: 16 },
-  scoreCard: { 
-    marginBottom: 16, 
-    elevation: 6, 
-    borderRadius: 18, 
-    alignItems: 'center', 
+  scoreCard: {
+    marginBottom: 16,
+    elevation: 6,
+    borderRadius: 18,
+    alignItems: 'center',
     paddingVertical: 32,
   },
-  scoreContent: { 
-    alignItems: 'center', 
+  scoreContent: {
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  scoreLabel: { 
-    fontSize: 22, 
-    marginBottom: 12, 
+  scoreLabel: {
+    fontSize: 22,
+    marginBottom: 12,
     fontWeight: '500',
     letterSpacing: 1,
   },
-  scoreValue: { 
+  scoreValue: {
     fontSize: 70,
-    fontWeight: 'bold', 
-    marginBottom: 0, 
+    fontWeight: 'bold',
+    marginBottom: 0,
     lineHeight: 78,
     textAlign: 'center',
   },
-    outOfTen: { 
-    fontSize: 24, 
-    color: '#999', 
-    marginBottom: 0, 
+  outOfTen: {
+    fontSize: 24,
+    color: '#999',
+    marginBottom: 0,
     marginTop: -8,
     textAlign: 'center',
     fontWeight: '500',
@@ -419,11 +466,24 @@ const styles = StyleSheet.create({
   card: { marginBottom: 16, elevation: 4 },
   cardTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 8 },
   divider: { marginBottom: 16 },
-  phaseItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
+  phaseItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
   phaseLabel: { fontSize: 16, flex: 1, fontWeight: '500' },
   scoreContainer: { alignItems: 'flex-end', flex: 1 },
   phaseScore: { fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
-  scoreBar: { width: 80, height: 6, backgroundColor: '#e0e0e0', borderRadius: 3, overflow: 'hidden' },
+  scoreBar: {
+    width: 80,
+    height: 6,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
   scoreBarFill: { height: '100%' },
   analysisText: { fontSize: 14, lineHeight: 22 },
   adviceSection: { marginBottom: 24 },
