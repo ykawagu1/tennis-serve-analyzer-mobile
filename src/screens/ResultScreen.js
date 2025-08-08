@@ -1,5 +1,5 @@
 // ResultScreen.js
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,15 @@ import {
   ScrollView,
   SafeAreaView,
   Image,
+  // Button ← react-native-paperを使うので不要
 } from 'react-native';
-import { Card, Button, Divider } from 'react-native-paper';
+import { Card, Button, Divider } from 'react-native-paper'; // Buttonはこちらのみ
 import { useSkin } from '../SkinContext';
 import { useTranslation } from 'react-i18next';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
+
 
 // ...グラデーション背景 import（省略せずすべて）
 
@@ -120,6 +125,21 @@ const SHARE_RESULTS_LABELS = {
 };
 
 const ResultScreen = ({ route, navigation }) => {
+
+  const scoreCardRef = useRef();
+  // キャプチャ&シェア関数
+  const handleShareScoreCard = async () => {
+    try {
+      const uri = await captureRef(scoreCardRef, {
+        format: 'png',
+        quality: 1,
+      });
+      await Sharing.shareAsync(uri);
+    } catch (err) {
+      console.error('シェア失敗:', err);
+    }
+  };
+
   // route, navigationを安全にガード（渡されていない場合は何も表示しない）
   if (!route || !route.params || !route.params.analysisResult) {
     return (
@@ -186,6 +206,7 @@ const ResultScreen = ({ route, navigation }) => {
       {/* --- 総合スコア --- */}
       {analysisResult.overall_score && (
         <Card
+          ref={scoreCardRef}
           style={[
             styles.scoreCard,
             { backgroundColor: skin.background, borderColor: skin.primary, borderWidth: 1 },
@@ -401,12 +422,11 @@ const ResultScreen = ({ route, navigation }) => {
         >
           {pick(NEW_ANALYSIS_LABELS, locale)}
         </Button>
+        
+        
         <Button
           mode="outlined"
-          onPress={() => {
-            // 今後実装予定
-            console.log('シェア機能は今後実装予定');
-          }}
+          onPress={handleShareScoreCard}   // ←これでOK
           style={styles.button}
           icon="share"
           labelStyle={{ color: skin.primary }}
