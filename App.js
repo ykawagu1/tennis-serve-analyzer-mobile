@@ -1,5 +1,5 @@
 import './src/i18n';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { LanguageProvider } from './src/contexts/LanguageContext';
 
 import { NavigationContainer } from '@react-navigation/native';
@@ -9,14 +9,15 @@ import { Provider as PaperProvider } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import Toast from 'react-native-toast-message';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next'; // 追加
+import { useTranslation } from 'react-i18next';
+import mobileAds from 'react-native-google-mobile-ads';
 
 import HomeScreen from './src/screens/HomeScreen';
 import ResultScreen from './src/screens/ResultScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import PermissionManager from './src/components/PermissionManager';
 import { SkinProvider, useSkin } from './src/SkinContext';
-import FAQScreen from './src/screens/FAQScreen'; // ← フォルダ構成に合わせて修正
+import FAQScreen from './src/screens/FAQScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -24,7 +25,7 @@ const Tab = createBottomTabNavigator();
 // メインタブナビゲーター
 const MainTabNavigator = () => {
   const { skin } = useSkin();
-  const { t } = useTranslation(); // 多言語化
+  const { t } = useTranslation();
 
   return (
     <Tab.Navigator
@@ -47,16 +48,16 @@ const MainTabNavigator = () => {
         name="Home"
         component={HomeScreen}
         options={{
-          title: t('home_title'),      // 多言語化
-          tabBarLabel: t('tab_home'),  // 多言語化
+          title: t('home_title'),
+          tabBarLabel: t('tab_home'),
         }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
         options={{
-          title: t('settings_header'),         // 多言語化
-          tabBarLabel: t('tab_settings'),      // 多言語化
+          title: t('settings_header'),
+          tabBarLabel: t('tab_settings'),
         }}
       />
     </Tab.Navigator>
@@ -66,7 +67,7 @@ const MainTabNavigator = () => {
 // メインスタックナビゲーター
 const MainStackNavigator = () => {
   const { skin } = useSkin();
-  const { t } = useTranslation(); // 多言語化
+  const { t } = useTranslation();
 
   return (
     <Stack.Navigator
@@ -86,7 +87,7 @@ const MainStackNavigator = () => {
         name="Result"
         component={ResultScreen}
         options={{
-          title: t('result_header'),      // 多言語化
+          title: t('result_header'),
           headerStyle: { backgroundColor: skin.primary },
           headerTintColor: skin.text === '#f8f8f8' ? '#f8f8f8' : '#fff',
           headerTitleStyle: { fontWeight: 'bold', fontSize: 18 },
@@ -96,7 +97,7 @@ const MainStackNavigator = () => {
         name="FAQ"
         component={FAQScreen}
         options={{
-          title: t('faq_header'),        // 多言語化
+          title: t('faq_header'),
           headerStyle: { backgroundColor: skin.primary },
           headerTintColor: skin.text === '#f8f8f8' ? '#f8f8f8' : '#fff',
           headerTitleStyle: { fontWeight: 'bold', fontSize: 18 },
@@ -124,19 +125,28 @@ const SkinThemeProvider = ({ children }) => {
 };
 
 export default function App() {
+  // AdMob SDK 初期化
+  useEffect(() => {
+    mobileAds()
+      .initialize()
+      .then(() => {
+        console.log('✅ AdMob initialized');
+      });
+  }, []);
+
   return (
     <LanguageProvider>
-    <SkinProvider>
-      <SkinThemeProvider>
-        <PermissionManager>
-          <NavigationContainer>
-            <StatusBar style="auto" />
-            <MainStackNavigator />
-            <Toast />
-          </NavigationContainer>
-        </PermissionManager>
-      </SkinThemeProvider>
-    </SkinProvider>
+      <SkinProvider>
+        <SkinThemeProvider>
+          <PermissionManager>
+            <NavigationContainer>
+              <StatusBar style="auto" />
+              <MainStackNavigator />
+              <Toast />
+            </NavigationContainer>
+          </PermissionManager>
+        </SkinThemeProvider>
+      </SkinProvider>
     </LanguageProvider>
   );
 }

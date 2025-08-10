@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useSkin } from '../SkinContext';
 import AnimatedGradientBackground from '../components/AnimatedGradientBackground';
+import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
 const API_BASE_URL = 'http://192.168.10.117:5001';
 const FREE_LIMIT = 3;
@@ -446,6 +447,16 @@ const HomeScreen = ({ navigation }) => {
         <SafeAreaView style={[styles.container, skinStyle.background]}>
           {Content}
           {GuideModal}
+          {!isPremium && (
+                    <View style={styles.bannerFooter}>
+                      <BannerAd
+                        unitId={__DEV__ ? TestIds.BANNER : 'ca-app-pub-3940256099942544/6300978111'}
+                        size={BannerAdSize.FULL_BANNER}
+                        onAdLoaded={() => console.log('Ad loaded')}
+                        onAdFailedToLoad={(e) => console.log('Ad error', e)}
+                      />
+                      </View>
+                    )}
         </SafeAreaView>
       </AnimatedGradientBackground>
     );
@@ -454,6 +465,16 @@ const HomeScreen = ({ navigation }) => {
       <SafeAreaView style={[styles.container, skinStyle.background]}>
         {Content}
         {GuideModal}
+        {!isPremium && (
+          <View style={styles.bannerFooter}>
+             <BannerAd
+              unitId={__DEV__ ? TestIds.BANNER : 'ca-app-pub-3940256099942544/6300978111'}
+              size={BannerAdSize.FULL_BANNER}
+              onAdLoaded={() => console.log('Ad loaded')}
+              onAdFailedToLoad={(e) => console.log('Ad error', e)}
+            />
+            </View>
+          )}
       </SafeAreaView>
     );
   }
@@ -462,7 +483,7 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f5' },
   scrollView: { flex: 1 },
-  scrollContent: { padding: 16 },
+  scrollContent: { padding: 16, paddingBottom: 90 },
   header: { alignItems: 'center', marginBottom: 24 },
   title: { fontSize: 24, fontWeight: 'bold', color: '#1976d2', marginBottom: 8 },
   subtitleRow: {
@@ -502,6 +523,18 @@ const styles = StyleSheet.create({
     modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
   modalFooter: { padding: 16, backgroundColor: 'rgba(0, 0, 0, 0.8)', alignItems: 'center' },
   modalFooterText: { fontSize: 14, color: '#fff', textAlign: 'center', lineHeight: 20 },
+  bannerFooter: {
+  position: 'absolute',
+  left: 0,
+  right: 0,
+  bottom: 0,
+  alignItems: 'center',
+  justifyContent: 'center',
+  height: 60,
+  backgroundColor: '#fff',
+  borderTopWidth: StyleSheet.hairlineWidth,
+  borderTopColor: '#ddd',
+},
 });
 
 export default HomeScreen;

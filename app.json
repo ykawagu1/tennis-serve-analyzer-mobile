@@ -6,15 +6,14 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
+    "scheme": "tennisserveanalyzer",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#1976d2"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tennisserveanalyzer.app",
@@ -22,7 +21,8 @@
         "NSCameraUsageDescription": "テニスサーブの動画を撮影するためにカメラへのアクセスが必要です。",
         "NSPhotoLibraryUsageDescription": "動画ファイルを選択するためにフォトライブラリへのアクセスが必要です。",
         "NSMicrophoneUsageDescription": "動画撮影時に音声を録音するためにマイクへのアクセスが必要です。",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "GADApplicationIdentifier": "ca-app-pub-9369357231963053~4011983268"
       }
     },
     "android": {
@@ -39,13 +39,23 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE"
-      ]
+      ],
+      "config": {
+        "googleMobileAdsAppId": "ca-app-pub-9369357231963053~4921207424"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
     "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-9369357231963053~4921207424",
+          "iosAppId": "ca-app-pub-9369357231963053~4011983268"
+        }
+      ],
       [
         "expo-image-picker",
         {
@@ -65,9 +75,7 @@
         {
           "icon": "./assets/notification-icon.png",
           "color": "#1976d2",
-          "sounds": [
-            "./assets/notification.wav"
-          ]
+          "sounds": ["./assets/notification.wav"]
         }
       ],
       "expo-localization"
