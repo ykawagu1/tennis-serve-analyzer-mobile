@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, SafeAreaView, Alert, Image,
 } from 'react-native';
@@ -11,19 +11,21 @@ import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
-
 import { useSkin } from '../SkinContext';
 import AnimatedGradientBackground from '../components/AnimatedGradientBackground';
-import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
+import { BannerAd, BannerAdSize, InterstitialAd, AdEventType, TestIds } from 'react-native-google-mobile-ads';
 
 const API_BASE_URL = 'http://192.168.10.117:5001';
 const FREE_LIMIT = 3;
+
+// 解析開始で全画面を出す（1日1回ガード）
+const INTERSTITIAL_SHOWN_KEY = 'interstitial_shown_date';
 
 const HomeScreen = ({ navigation }) => {
   const { skin, skinStyle, skinKey, isPremium, setIsPremium } = useSkin();
   const [selectedFile, setSelectedFile] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isSelecting, setIsSelecting] = useState(false); // ← 動画選択中フラグ
+  const [isSelecting, setIsSelecting] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
   const [error, setError] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -31,9 +33,59 @@ const HomeScreen = ({ navigation }) => {
   const [showShootingGuide, setShowShootingGuide] = useState(false);
   const [usageCount, setUsageCount] = useState(0);
 
+  // 広告まわり
+  const interstitialRef = useRef(
+    InterstitialAd.createForAdRequest(
+      __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX' // ←本番IDに差し替え
+    )
+  );
+  const [adLoaded, setAdLoaded] = useState(false);
+  const [postAdWaiting, setPostAdWaiting] = useState(false); // 広告後に解析待ちのオーバーレイ
+  const analysisDoneRef = useRef(false);      // 解析完了フラグ
+  const navigatedRef = useRef(false);         // 二重遷移防止
+  const resultRef = useRef(null);             // 最新の解析結果を保持（閉じイベント内で使う）
+
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language;
 
+  // Interstitialのライフサイクル
+  useEffect(() => {
+    const interstitial = interstitialRef.current;
+
+    const subLoaded = interstitial.addAdEventListener(AdEventType.LOADED, () => {
+      setAdLoaded(true);
+    });
+    const subClosed = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
+      setAdLoaded(false);
+
+      // 広告終了時点で解析完了済みなら即Result、まだならローディング
+      if (analysisDoneRef.current) {
+        if (!navigatedRef.current) {
+          navigatedRef.current = true;
+          navigation.navigate('Result', { analysisResult: resultRef.current });
+        }
+      } else {
+        setPostAdWaiting(true);
+      }
+
+      // 次に備えてロード
+      interstitial.load();
+    });
+    const subError = interstitial.addAdEventListener(AdEventType.ERROR, () => {
+      setAdLoaded(false);
+      setTimeout(() => interstitial.load(), 4000);
+    });
+
+    interstitial.load();
+
+    return () => {
+      subLoaded();
+      subClosed();
+      subError();
+    };
+  }, [navigation]);
+
+  // ヘッダーロゴ
   useFocusEffect(
     useCallback(() => {
       navigation.setOptions({
@@ -43,12 +95,7 @@ const HomeScreen = ({ navigation }) => {
               source={require('../../assets/tossup2.png')}
               style={{ width: 32, height: 32, resizeMode: 'contain', marginRight: 8 }}
             />
-            <Text style={{
-              fontSize: 20,
-              fontWeight: 'bold',
-              color: '#000',
-              letterSpacing: 1,
-            }}>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#000', letterSpacing: 1 }}>
               Toss Up!
             </Text>
           </View>
@@ -63,11 +110,13 @@ const HomeScreen = ({ navigation }) => {
       (async () => {
         setSelectedFile(null);
         setAnalysisResult(null);
+        resultRef.current = null;
         setError(null);
         setCurrentStep(1);
         setUserConcerns('');
         setIsSelecting(false);
         setIsAnalyzing(false);
+
         const today = new Date().toLocaleDateString();
         const usageDate = await AsyncStorage.getItem('usageDate');
         if (usageDate !== today) {
@@ -75,7 +124,7 @@ const HomeScreen = ({ navigation }) => {
           await AsyncStorage.setItem('usageCount', '0');
           setUsageCount(0);
         } else {
-          const count = parseInt(await AsyncStorage.getItem('usageCount') || '0');
+          const count = parseInt((await AsyncStorage.getItem('usageCount')) || '0');
           setUsageCount(count);
         }
       })();
@@ -169,16 +218,22 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  // 解析実行
+  // 解析実行（広告と同時スタート）
   const handleAnalyze = async () => {
     if (!selectedFile) return;
 
-    const today = new Date().toLocaleDateString();
+    // 遷移フラグを初期化
+    analysisDoneRef.current = false;
+    navigatedRef.current = false;
+    setPostAdWaiting(false);
+
+    // 無料回数チェック
+    const todayStr = new Date().toLocaleDateString();
     const usageDate = await AsyncStorage.getItem('usageDate');
-    let count = parseInt(await AsyncStorage.getItem('usageCount') || '0');
-    if (usageDate !== today) {
+    let count = parseInt((await AsyncStorage.getItem('usageCount')) || '0');
+    if (usageDate !== todayStr) {
       count = 0;
-      await AsyncStorage.setItem('usageDate', today);
+      await AsyncStorage.setItem('usageDate', todayStr);
       await AsyncStorage.setItem('usageCount', '0');
     }
     if (!isPremium && count >= FREE_LIMIT) {
@@ -188,46 +243,73 @@ const HomeScreen = ({ navigation }) => {
 
     setIsAnalyzing(true);
     setError(null);
-    try {
-      const formData = new FormData();
-      formData.append('video', {
-        uri: selectedFile.uri,
-        type: selectedFile.type || 'video/mp4',
-        name: selectedFile.name || 'video.mp4',
-      });
-      if (isPremium && userConcerns.trim()) {
-        formData.append('user_concerns', userConcerns);
-      }
-      formData.append('is_premium', isPremium ? 'true' : 'false');
-      formData.append('language', currentLang);
-      const response = await axios.post(`${API_BASE_URL}/api/analyze`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
 
-      if (response.data && response.data.success && response.data.result) {
-        setAnalysisResult(response.data.result);
-        setCurrentStep(3);
-        Toast.show({ type: 'success', text1: t('analyze_done'), text2: t('check_result') });
-        navigation.navigate('Result', {
-          analysisResult: response.data.result,
+    // 解析（非同期で即スタート）
+    (async () => {
+      try {
+        const formData = new FormData();
+        formData.append('video', {
+          uri: selectedFile.uri,
+          type: selectedFile.type || 'video/mp4',
+          name: selectedFile.name || 'video.mp4',
         });
-        if (!isPremium) {
-          await AsyncStorage.setItem('usageCount', (count + 1).toString());
-          setUsageCount(count + 1);
+        if (isPremium && userConcerns.trim()) {
+          formData.append('user_concerns', userConcerns);
         }
-      } else {
-        setError(t('invalid_result_format'));
+        formData.append('is_premium', isPremium ? 'true' : 'false');
+        formData.append('language', currentLang);
+
+        const response = await axios.post(`${API_BASE_URL}/api/analyze`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        if (response.data && response.data.success && response.data.result) {
+          setAnalysisResult(response.data.result);
+          resultRef.current = response.data.result;
+          setCurrentStep(3);
+          analysisDoneRef.current = true;
+          Toast.show({ type: 'success', text1: t('analyze_done'), text2: t('check_result') });
+
+          // もし広告後待ち状態なら、ここで即遷移
+          if (postAdWaiting && !navigatedRef.current) {
+            navigatedRef.current = true;
+            setPostAdWaiting(false);
+            navigation.navigate('Result', { analysisResult: response.data.result });
+          }
+
+          if (!isPremium) {
+            await AsyncStorage.setItem('usageCount', (count + 1).toString());
+            setUsageCount(count + 1);
+          }
+        } else {
+          setError(t('invalid_result_format'));
+        }
+      } catch (err) {
+        console.error('解析エラー:', err);
+        setError(t('analyze_error'));
+        Toast.show({
+          type: 'error',
+          text1: t('analyze_error_title'),
+          text2: t('analyze_error_retry'),
+        });
+      } finally {
+        setIsAnalyzing(false);
       }
-    } catch (err) {
-      console.error('解析エラー:', err);
-      setError(t('analyze_error'));
-      Toast.show({
-        type: 'error',
-        text1: t('analyze_error_title'),
-        text2: t('analyze_error_retry'),
-      });
-    } finally {
-      setIsAnalyzing(false);
+    })();
+
+    // 同時にインタースティシャルを表示（プレミアムは出さない、1日1回ガード）
+    try {
+      if (!isPremium && adLoaded) {
+        const today = new Date().toISOString().slice(0, 10);
+        const shownDate = await AsyncStorage.getItem(INTERSTITIAL_SHOWN_KEY);
+        if (shownDate !== today) {
+          await interstitialRef.current.show(); // 閉じた瞬間の制御は useEffect 内の CLOSED で
+          await AsyncStorage.setItem(INTERSTITIAL_SHOWN_KEY, today);
+        }
+      }
+    } catch (e) {
+      console.log('Interstitial show failed', e);
+      // 失敗でも解析は継続
     }
   };
 
@@ -267,16 +349,12 @@ const HomeScreen = ({ navigation }) => {
       {(currentStep === 1 || (currentStep === 2 && !selectedFile)) && (
         <Card style={[styles.card, skinStyle.card]}>
           <Card.Content>
-            {/* くるくるマーク：動画選択中 */}
-            {isSelecting && (
+            {isSelecting ? (
               <View style={{ alignItems: 'center', margin: 32 }}>
                 <ActivityIndicator animating={true} size="large" color="#1976d2" />
                 <Text style={{ marginTop: 16 }}>{t('video_preparing') || '動画を準備しています...'}</Text>
               </View>
-            )}
-
-            {/* 通常UI（くるくるが出てない時だけ） */}
-            {!isSelecting && (
+            ) : (
               <>
                 <Text style={[styles.cardTitle, skinStyle.cardTitle]}>{t('home_select_video')}</Text>
                 <Text style={[styles.cardDescription, skinStyle.cardDescription]}>
@@ -295,9 +373,7 @@ const HomeScreen = ({ navigation }) => {
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12 }}>
                   <Switch value={isPremium} onValueChange={setIsPremium} />
                   <Text style={{ marginLeft: 8 }}>
-                    {isPremium
-                      ? t('home_premium_label')
-                      : t('home_free_label')}
+                    {isPremium ? t('home_premium_label') : t('home_free_label')}
                   </Text>
                 </View>
                 <View style={styles.guideButtonContainer}>
@@ -329,9 +405,7 @@ const HomeScreen = ({ navigation }) => {
                     {t('home_take_photo')}
                   </Button>
                 </View>
-                <Text style={styles.note}>
-                  {t('home_note')}
-                </Text>
+                <Text style={styles.note}>{t('home_note')}</Text>
               </>
             )}
           </Card.Content>
@@ -341,7 +415,6 @@ const HomeScreen = ({ navigation }) => {
       {currentStep === 2 && selectedFile && (
         <Card style={[styles.card, skinStyle.card]}>
           <Card.Content>
-            {/* くるくるマーク：解析中 */}
             {isAnalyzing ? (
               <View style={{ alignItems: 'center', margin: 32 }}>
                 <ActivityIndicator animating={true} size="large" color="#1976d2" />
@@ -366,26 +439,14 @@ const HomeScreen = ({ navigation }) => {
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 12 }}>
                   <Switch value={isPremium} onValueChange={setIsPremium} />
                   <Text style={{ marginLeft: 8 }}>
-                    {isPremium
-                      ? t('home_premium_label')
-                      : t('home_free_label')}
+                    {isPremium ? t('home_premium_label') : t('home_free_label')}
                   </Text>
                 </View>
                 <View style={styles.buttonContainer}>
-                  <Button
-                    mode="contained"
-                    onPress={handleAnalyze}
-                    style={styles.button}
-                    icon="play"
-                  >
+                  <Button mode="contained" onPress={handleAnalyze} style={styles.button} icon="play">
                     {t('home_start_analysis')}
                   </Button>
-                  <Button
-                    mode="outlined"
-                    onPress={handleReset}
-                    style={styles.button}
-                    icon="refresh"
-                  >
+                  <Button mode="outlined" onPress={handleReset} style={styles.button} icon="refresh">
                     {t('home_reset')}
                   </Button>
                 </View>
@@ -433,9 +494,7 @@ const HomeScreen = ({ navigation }) => {
       )}
       FooterComponent={() => (
         <View style={styles.modalFooter}>
-          <Text style={styles.modalFooterText}>
-            {t('home_guide_footer')}
-          </Text>
+          <Text style={styles.modalFooterText}>{t('home_guide_footer')}</Text>
         </View>
       )}
     />
@@ -447,16 +506,25 @@ const HomeScreen = ({ navigation }) => {
         <SafeAreaView style={[styles.container, skinStyle.background]}>
           {Content}
           {GuideModal}
+
+          {/* 広告後の解析待ちオーバーレイ */}
+          {postAdWaiting && (
+            <View style={styles.postAdOverlay}>
+              <ActivityIndicator animating={true} size="large" />
+              <Text style={{ marginTop: 12 }}>{t('analyzing') || 'AIで解析中…'}</Text>
+            </View>
+          )}
+
           {!isPremium && (
-                    <View style={styles.bannerFooter}>
-                      <BannerAd
-                        unitId={__DEV__ ? TestIds.BANNER : 'ca-app-pub-3940256099942544/6300978111'}
-                        size={BannerAdSize.FULL_BANNER}
-                        onAdLoaded={() => console.log('Ad loaded')}
-                        onAdFailedToLoad={(e) => console.log('Ad error', e)}
-                      />
-                      </View>
-                    )}
+            <View style={styles.bannerFooter}>
+              <BannerAd
+                unitId={__DEV__ ? TestIds.BANNER : 'ca-app-pub-3940256099942544/6300978111'}
+                size={BannerAdSize.FULL_BANNER}
+                onAdLoaded={() => console.log('Ad loaded')}
+                onAdFailedToLoad={(e) => console.log('Ad error', e)}
+              />
+            </View>
+          )}
         </SafeAreaView>
       </AnimatedGradientBackground>
     );
@@ -465,16 +533,24 @@ const HomeScreen = ({ navigation }) => {
       <SafeAreaView style={[styles.container, skinStyle.background]}>
         {Content}
         {GuideModal}
+
+        {postAdWaiting && (
+          <View style={styles.postAdOverlay}>
+            <ActivityIndicator animating={true} size="large" />
+            <Text style={{ marginTop: 12 }}>{t('analyzing') || 'AIで解析中…'}</Text>
+          </View>
+        )}
+
         {!isPremium && (
           <View style={styles.bannerFooter}>
-             <BannerAd
+            <BannerAd
               unitId={__DEV__ ? TestIds.BANNER : 'ca-app-pub-3940256099942544/6300978111'}
               size={BannerAdSize.FULL_BANNER}
               onAdLoaded={() => console.log('Ad loaded')}
               onAdFailedToLoad={(e) => console.log('Ad error', e)}
             />
-            </View>
-          )}
+          </View>
+        )}
       </SafeAreaView>
     );
   }
@@ -511,6 +587,7 @@ const styles = StyleSheet.create({
   progressText: { fontSize: 16, marginBottom: 8 },
   errorCard: { backgroundColor: '#ffebee', marginBottom: 16 },
   errorText: { color: '#c62828', textAlign: 'center' },
+
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -520,21 +597,29 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
     zIndex: 99,
   },
-    modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
   modalFooter: { padding: 16, backgroundColor: 'rgba(0, 0, 0, 0.8)', alignItems: 'center' },
   modalFooterText: { fontSize: 14, color: '#fff', textAlign: 'center', lineHeight: 20 },
+
+  postAdOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 999,
+  },
+
   bannerFooter: {
-  position: 'absolute',
-  left: 0,
-  right: 0,
-  bottom: 0,
-  alignItems: 'center',
-  justifyContent: 'center',
-  height: 60,
-  backgroundColor: '#fff',
-  borderTopWidth: StyleSheet.hairlineWidth,
-  borderTopColor: '#ddd',
-},
+    position: 'absolute',
+    left: 0, right: 0, bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 60,
+    backgroundColor: '#fff',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#ddd',
+  },
 });
 
 export default HomeScreen;
