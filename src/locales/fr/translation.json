@@ -47,6 +47,7 @@
   "home_ready": "Prêt pour l'analyse",
   "home_selected_file": "Fichier sélectionné :",
   "home_input_concern_label": "Décrivez vos préoccupations ici (optionnel)",
+  "home_input_concern_label2": "Vos préoccupations (facultatif)",
   "home_premium_label": "Premium (Conseils détaillés par IA)",
   "home_free_label": "Mode gratuit (Analyse simple uniquement)",
   "home_guide": "Guide de prise de vue",
@@ -77,5 +78,6 @@
   "tab_home": "Accueil",
   "tab_settings": "Paramètres",
   "result_header": "Résultat",
-  "faq_header": "FAQ"
+  "faq_header": "FAQ",
+  "detailed_advice_premium_only": "Les conseils détaillés sont disponibles uniquement pour les utilisateurs premium."
 }

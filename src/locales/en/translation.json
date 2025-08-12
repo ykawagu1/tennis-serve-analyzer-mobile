@@ -47,6 +47,7 @@
   "home_ready": "Ready for analysis",
   "home_selected_file": "Selected file:",
   "home_input_concern_label": "Describe your concerns here (optional)",
+  "home_input_concern_label2": "Concerns about your serve (optional)",
   "home_premium_label": "Premium (Detailed AI advice)",
   "home_free_label": "Free mode (Simple analysis only)",
   "home_guide": "Shooting Guide",
@@ -111,6 +112,6 @@
   "tab_home": "Home",
   "tab_settings": "Settings",
   "result_header": "Result",
-  "faq_header": "FAQ"
-
+  "faq_header": "FAQ",
+  "detailed_advice_premium_only": "Detailed advice is only available for premium users."
 }

@@ -13,6 +13,8 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import uuid
+from dotenv import load_dotenv
+load_dotenv()
 
 # サービスのインポート
 from utils import generate_overlay_images_with_dominant_hand
@@ -111,6 +113,10 @@ def health():
 
 @app.route('/api/analyze', methods=['POST'])
 def analyze_video():
+    print('[HIT] /api/analyze', request.headers.get('Content-Length'))
+    print('[FORM]', request.form.to_dict())
+    f = request.files.get('video')
+    print(' file=', f.filename if f else None)
     try:
         logger.info("=== 動画解析リクエスト受信 ===")
         if 'video' not in request.files:

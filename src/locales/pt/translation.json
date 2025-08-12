@@ -47,6 +47,7 @@
   "home_ready": "Pronto para análise",
   "home_selected_file": "Arquivo selecionado:",
   "home_input_concern_label": "Descreva suas dúvidas aqui (opcional)",
+  "home_input_concern_label2":"Suas preocupações (opcional)",
   "home_premium_label": "Premium (Dicas detalhadas da IA)",
   "home_free_label": "Modo grátis (Apenas análise simples)",
   "home_guide": "Guia de gravação",
@@ -78,6 +79,6 @@
   "tab_home": "Início",
   "tab_settings": "Configurações",
   "result_header": "Resultado",
-  "faq_header": "Perguntas Frequentes (FAQ)"
-
+  "faq_header": "Perguntas Frequentes (FAQ)",
+  "detailed_advice_premium_only": "Conselhos detalhados estão disponíveis apenas para usuários premium." 
 }

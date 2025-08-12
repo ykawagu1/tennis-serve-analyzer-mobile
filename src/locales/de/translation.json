@@ -47,6 +47,7 @@
   "home_ready": "Bereit zur Analyse",
   "home_selected_file": "Ausgewählte Datei:",
   "home_input_concern_label": "Beschreiben Sie hier Ihre Anliegen (optional)",
+  "home_input_concern_label2":"Ihre Anliegen (optional)",
   "home_premium_label": "Premium (Detaillierte KI-Ratschläge)",
   "home_free_label": "Kostenloser Modus (Nur einfache Analyse)",
   "home_guide": "Aufnahmeleitfaden",
@@ -78,6 +79,7 @@
   "tab_home": "Startseite",
   "tab_settings": "Einstellungen",
   "result_header": "Ergebnis",
-  "faq_header": "FAQ"
+  "faq_header": "FAQ",
+  "detailed_advice_premium_only": "Detaillierte Ratschläge sind nur für Premium-Nutzer verfügbar."
 
 }

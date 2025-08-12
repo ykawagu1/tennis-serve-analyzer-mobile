@@ -1,5 +1,5 @@
 // ResultScreen.js
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -150,8 +150,15 @@ const ResultScreen = ({ route, navigation }) => {
     );
   }
   const { analysisResult } = route.params;
+
+  useEffect(() => {
+    console.log('[Result analysisResult]', JSON.stringify(analysisResult, null, 2));
+  }, [analysisResult]);
+
+
+
   const { skin, skinKey, isPremium } = useSkin();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const locale = normalize(i18n.language);
   if (!i18n.isInitialized) return null;
@@ -372,10 +379,8 @@ const ResultScreen = ({ route, navigation }) => {
           {analysisResult.advice?.detailed_advice ? (
             <View>{formatAIResponse(analysisResult.advice.detailed_advice, skin.text)}</View>
           ) : (
-            <Text style={{ color: skin.text }}>
-              {locale === 'ja'
-                ? 'AIによる詳細アドバイスはプレミアムユーザーのみ利用可能です。'
-                : 'Detailed advice is only available for premium users.'}
+             <Text style={{ color: skin.text }}>
+              {t('detailed_advice_premium_only')}
             </Text>
           )}
         </Card.Content>
