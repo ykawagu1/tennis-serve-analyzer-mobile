@@ -1,30 +1,70 @@
 import os
 import logging
 from typing import Dict, List, Optional
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
+from openai import OpenAI
+import os
+from dotenv import load_dotenv
+
+from openai import OpenAI
+import os
+from dotenv import load_dotenv
+import logging
+from typing import Dict, List, Optional
+
+logger = logging.getLogger(__name__)
+import os
+logger.info(f"API_KEY={repr(os.getenv('OPENAI_API_KEY'))}")
+logger.info(f"ORG_ID={repr(os.getenv('OPENAI_ORG_ID'))}")
+logger.info(f"PROJECT_ID={repr(os.getenv('OPENAI_PROJECT_ID'))}")
+
+from openai import OpenAI
+import os
+from dotenv import load_dotenv
+
 class AdviceGenerator:
     def __init__(self):
-        self.api_key = os.environ.get("OPENAI_API_KEY", "")
-        self.client = None
-        if self.api_key:
-            self._init_openai_client(self.api_key)
-        else:
-            logger.warning("OpenAI APIキーが環境変数にセットされていません")
+        load_dotenv()
 
-    def _init_openai_client(self, api_key: str):
+        # 環境変数から読み込み
+        self.api_key = os.getenv("OPENAI_API_KEY", "").strip()
+        self.org_id = os.getenv("OPENAI_ORG_ID", "").strip()
+        # Python SDK は PROJECT_ID ではなく PROJECT を見る
+        self.project_id = os.getenv("OPENAI_PROJECT", "").strip()
+
+        logger.info(f"APIキー読み込み確認: {repr(self.api_key)}")
+        logger.info(f"ORG_ID={repr(self.org_id)} PROJECT={repr(self.project_id)}")
+
+        if not self.api_key:
+            raise ValueError("OPENAI_API_KEY が設定されていません")
+
         try:
-            from openai import OpenAI
-            self.client = OpenAI(api_key=api_key)
+            # kwargs を組み立てる
+            kwargs = {"api_key": self.api_key}
+            if self.org_id:
+                kwargs["organization"] = self.org_id
+            if self.project_id:
+                kwargs["project"] = self.project_id
+
+            self.client = OpenAI(**kwargs)
             logger.info("OpenAI クライアント初期化成功（v1.0+）")
-        except ImportError:
-            try:
-                import openai
-                openai.api_key = api_key
-                logger.info("OpenAI API キー設定成功（v0.x）")
-            except ImportError:
-                logger.error("OpenAI ライブラリがインストールされていません")
+        except Exception as e:
+            logger.error(f"OpenAI クライアント初期化失敗: {e}")
+            self.client = None
+
+    def _init_openai_client(self):
+        try:
+            self.client = OpenAI(
+                api_key=self.api_key,
+                organization=self.org_id if self.org_id else None,
+                project=self.project_id if self.project_id else None
+            )
+            logger.info("OpenAI クライアント初期化成功（v1.0+）")
+        except Exception as e:
+            logger.error(f"OpenAI クライアント初期化失敗: {e}")
 
     def generate_advice(
         self,
@@ -321,7 +361,6 @@ class AdviceGenerator:
 2. 4週間トレーニングプログラム
 3. フィジカル強化メニュー
 4. 実戦での確認ポイント
-5. ワンポイントアドバイス
 
 特に改善が必要なフェーズ（{', '.join(weak_phases)}）に重点を置いて、具体的で実践的なアドバイスをお願いします。
 【アドバイス生成要件】
@@ -520,12 +559,10 @@ Konzentrieren Sie sich besonders auf die Phasen, die verbessert werden müssen (
                 system_content = "あなたは30年以上の経験を持つATP/WTAツアーのプロテニスコーチです。下記「ユーザーの具体的な悩み」に必ず明確かつ具体的に答えてください。"
             elif language == "en":
                 system_content = "You are a professional tennis coach with over 30 years of ATP/WTA tour experience. Always respond clearly and concretely to the user's specific concerns below."
-            elif language == "es":
-                system_content = "Eres un entrenador profesional de tenis con más de 30 años de experiencia en el circuito ATP/WTA. Responde siempre de forma clara y concreta a las inquietudes específicas del usuario a continuación."
             else:
-                system_content = "You are a highly experienced tennis coach. Always respond clearly and concretely to the user's concerns."
+                system_content = "You are a highly experienced tennis coach."
 
-            if self.client:
+            if self.client:  # v1.0+ クライアント
                 logger.info("OpenAI v1.0+ APIを使用")
                 response = self.client.chat.completions.create(
                     model="gpt-4.1-nano",
@@ -538,9 +575,15 @@ Konzentrieren Sie sich besonders auf die Phasen, die verbessert werden müssen (
                 )
                 return response.choices[0].message.content
             else:
-                logger.info("OpenAI v0.x APIを使用")
-                import openai
-                response = openai.ChatCompletion.create(
+                # fallback も新形式に統一
+                from openai import OpenAI
+                client = OpenAI(
+                    api_key=os.getenv("OPENAI_API_KEY"),
+                    organization=os.getenv("OPENAI_ORG_ID"),
+                    project=os.getenv("OPENAI_PROJECT_ID")
+                )
+                logger.info("OpenAI fallback クライアント使用 (v1.0+)")
+                response = client.chat.completions.create(
                     model="gpt-4.1-nano",
                     messages=[
                         {"role": "system", "content": system_content},
@@ -550,6 +593,7 @@ Konzentrieren Sie sich besonders auf die Phasen, die verbessert werden müssen (
                     temperature=0.7
                 )
                 return response.choices[0].message.content
+
         except Exception as e:
             logger.error(f"ChatGPT API呼び出しエラー: {e}")
             return None
