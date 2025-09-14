@@ -8,6 +8,7 @@ import logging
 import traceback
 import subprocess
 import json
+import time, shutil 
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -232,6 +233,64 @@ def download_file(filename):
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({'status': 'healthy', 'timestamp': datetime.now().isoformat()})
+
+# クリーンアップの有効期限（本番は24時間）
+EXPIRE_SECONDS = 24 * 60 * 60
+
+@app.route("/api/list_uploads", methods=["GET"])
+def list_uploads():
+    """アップロード済みファイル一覧を返す"""
+    try:
+        files = os.listdir(UPLOAD_FOLDER)
+        return jsonify({"files": files})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+@app.route("/api/list_output", methods=["GET"])
+def list_output():
+    """出力済みファイル一覧を返す"""
+    try:
+        files = []
+        for root, dirs, filenames in os.walk(OUTPUT_FOLDER):
+            for name in filenames:
+                path = os.path.join(root, name)
+                size = os.path.getsize(path)
+                files.append({
+                    "name": name,
+                    "size": size,
+                    "path": os.path.relpath(path, OUTPUT_FOLDER)
+                })
+        return jsonify({"files": files})
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
+@app.route("/api/cleanup", methods=["POST"])
+def cleanup_endpoint():
+    """期限切れファイルの削除"""
+    now = time.time()
+    deleted = []
+
+    for folder in [UPLOAD_FOLDER, OUTPUT_FOLDER]:
+        for root, dirs, files in os.walk(folder, topdown=False):
+            for name in files:
+                path = os.path.join(root, name)
+                try:
+                    diff = now - os.path.getmtime(path)
+                    if diff > EXPIRE_SECONDS:
+                        os.remove(path)
+                        deleted.append(path)
+                except Exception as e:
+                    deleted.append(f"削除エラー {path}: {e}")
+            for name in dirs:
+                path = os.path.join(root, name)
+                try:
+                    if now - os.path.getmtime(path) > EXPIRE_SECONDS:
+                        shutil.rmtree(path)
+                        deleted.append(path)
+                except Exception as e:
+                    deleted.append(f"削除エラー {path}: {e}")
+
+    return jsonify({"deleted": deleted})
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
