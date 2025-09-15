@@ -163,49 +163,95 @@ const ResultScreen = ({ route, navigation }) => {
   const locale = normalize(i18n.language);
   if (!i18n.isInitialized) return null;
 
-  // Markdown風整形
-  const formatAIResponse = (text, textColor = '#fff') => {
-    if (!text) return null;
-    const lines = text.split('\n');
-    const elements = [];
-    lines.forEach((line, index) => {
-      const trimmedLine = line.trim();
-      if (trimmedLine.startsWith('【') && trimmedLine.endsWith('】')) {
-        elements.push(
-          <Text key={`h2-${index}`} style={[styles.heading2, { color: textColor }]}>
-            {trimmedLine}
+// **テキスト** を <Text style={{fontWeight:'bold'}}> に変換
+const applyBold = (line, textColor = '#fff') => {
+  const parts = line.split(/(\*\*.*?\*\*)/); // **で囲まれた部分を分割
+  return parts.map((part, idx) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return (
+        <Text key={idx} style={{ fontWeight: 'bold', color: textColor }}>
+          {part.slice(2, -2)}
+        </Text>
+      );
+    } else {
+      return (
+        <Text key={idx} style={{ color: textColor }}>
+          {part}
+        </Text>
+      );
+    }
+  });
+};
+
+// Markdown風整形 (##, ###, 【見出し】, *, -, 数字リスト, **bold**, *italic*)
+const formatAIResponse = (text, textColor = '#fff') => {
+  if (!text) return null;
+  const lines = text.split('\n');
+  const elements = [];
+
+  lines.forEach((line, index) => {
+    const trimmedLine = line.trim();
+
+    // ### 小見出し
+    if (trimmedLine.startsWith('### ')) {
+      elements.push(
+        <Text key={`h3-${index}`} style={[styles.heading3, { color: textColor }]}>
+          {applyBold(trimmedLine.replace(/^###\s*/, ''), textColor)}
+        </Text>
+      );
+
+    // ## 見出し
+    } else if (trimmedLine.startsWith('## ')) {
+      elements.push(
+        <Text key={`h2-${index}`} style={[styles.heading2, { color: textColor }]}>
+          {applyBold(trimmedLine.replace(/^##\s*/, ''), textColor)}
+        </Text>
+      );
+
+    // 【見出し】
+    } else if (trimmedLine.startsWith('【') && trimmedLine.endsWith('】')) {
+      elements.push(
+        <Text key={`h2b-${index}`} style={[styles.heading2, { color: textColor }]}>
+          {applyBold(trimmedLine, textColor)}
+        </Text>
+      );
+
+    // 番号付きリスト (1. ...)
+    } else if (/^\d+\./.test(trimmedLine)) {
+      elements.push(
+        <View key={`ol-${index}`} style={styles.listItem}>
+          <Text style={[styles.numberBullet, { color: textColor }]}>
+            {trimmedLine.match(/^\d+\./)[0]}
           </Text>
-        );
-      } else if (/^\d+\./.test(trimmedLine)) {
-        elements.push(
-          <View key={`ol-${index}`} style={styles.listItem}>
-            <Text style={[styles.numberBullet, { color: textColor }]}>
-              {trimmedLine.match(/^\d+\./)[0]}
-            </Text>
-            <Text style={[styles.listText, { color: textColor }]}>
-              {trimmedLine.replace(/^\d+\.\s*/, '')}
-            </Text>
-          </View>
-        );
-      } else if (trimmedLine.startsWith('- ')) {
-        elements.push(
-          <View key={`li-${index}`} style={styles.listItem}>
-            <Text style={[styles.bullet, { color: textColor }]}>•</Text>
-            <Text style={[styles.listText, { color: textColor }]}>
-              {trimmedLine.replace('- ', '')}
-            </Text>
-          </View>
-        );
-      } else if (trimmedLine.length > 0) {
-        elements.push(
-          <Text key={`p-${index}`} style={[styles.paragraph, { color: textColor }]}>
-            {trimmedLine}
+          <Text style={[styles.listText, { color: textColor }]}>
+            {applyBold(trimmedLine.replace(/^\d+\.\s*/, ''), textColor)}
           </Text>
-        );
-      }
-    });
-    return elements;
-  };
+        </View>
+      );
+
+    // 箇条書き (- や * で始まる行)
+    } else if (/^[-*]\s+/.test(trimmedLine)) {
+      elements.push(
+        <View key={`li-${index}`} style={styles.listItem}>
+          <Text style={[styles.bullet, { color: textColor }]}>•</Text>
+          <Text style={[styles.listText, { color: textColor }]}>
+            {applyBold(trimmedLine.replace(/^[-*]\s+/, ''), textColor)}
+          </Text>
+        </View>
+      );
+
+    // 通常テキスト
+    } else if (trimmedLine.length > 0) {
+      elements.push(
+        <Text key={`p-${index}`} style={[styles.paragraph, { color: textColor }]}>
+          {applyBold(trimmedLine, textColor)}
+        </Text>
+      );
+    }
+  });
+
+  return elements;
+};
 
   // --- 本体UI ---
   const Content = (
@@ -533,6 +579,7 @@ const styles = StyleSheet.create({
   listText: { flex: 1, fontSize: 14, lineHeight: 20 },
   buttonContainer: { marginTop: 16, gap: 12 },
   button: { marginVertical: 4 },
+  heading3: { fontSize: 16, fontWeight: '600', marginTop: 12, marginBottom: 6 },
 });
 
 export default ResultScreen;
